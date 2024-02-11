@@ -1,0 +1,51 @@
+
+# generic Linux option
+add_compile_options("-fPIC")
+
+# exi codec is statically linked with iso15118-2x share lib
+add_library(cb_exi_codec)
+target_compile_features(cb_exi_codec PRIVATE c_std_99)
+
+target_sources(cb_exi_codec
+    PRIVATE
+        common/exi_basetypes_decoder.c
+        common/exi_basetypes_encoder.c
+        common/exi_basetypes.c
+        common/exi_bitstream.c
+        common/exi_header.c
+        common/exi_types_decoder.c
+)
+
+target_include_directories(cb_exi_codec
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/common
+)
+
+# Build libiso15118 -20 & -2
+file(GLOB ISO20_SRC appHandshake/*.c iso-20/*.c iso-2/*.c v2gtp/*.c)
+file(GLOB ISO20_INC appHandshake/*.h iso-20/*.h iso-2/*.h v2gtp/*.h)
+add_library(iso15118 SHARED ${ISO20_SRC})
+target_compile_features(iso15118 PRIVATE c_std_99)
+
+target_include_directories(iso15118
+    PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/iso-20
+        ${CMAKE_CURRENT_SOURCE_DIR}/iso-2
+        ${CMAKE_CURRENT_SOURCE_DIR}/common
+)
+
+target_link_libraries(iso15118
+    PRIVATE
+        cb_exi_codec
+)
+
+set_target_properties (iso15118 PROPERTIES
+	PUBLIC_HEADER "${ISO20_INC}"
+    LIBRARY_OUTPUT_DIRECTORY "lib64"
+	VERSION "${PROJECT_VERSION}"
+    )
+
+install(TARGETS iso15118
+    PUBLIC_HEADER DESTINATION include/iso15118
+    LIBRARY DESTINATION lib64
+)
