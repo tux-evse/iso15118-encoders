@@ -22,8 +22,8 @@ target_include_directories(cb_exi_codec
 )
 
 # Build libiso15118 -20 & -2
-file(GLOB ISO20_SRC appHandshake/*.c iso-20/*.c iso-2/*.c v2gtp/*.c)
-file(GLOB ISO20_INC appHandshake/*.h iso-20/*.h iso-2/*.h v2gtp/*.h)
+file(GLOB ISO20_SRC appHandshake/*.c iso-20/*.c iso-2/*.c v2gtp/*.c din/*.c)
+file(GLOB ISO20_INC appHandshake/*.h iso-20/*.h iso-2/*.h v2gtp/*.h din/*.h)
 add_library(iso15118 SHARED ${ISO20_SRC})
 target_compile_features(iso15118 PRIVATE c_std_99)
 
