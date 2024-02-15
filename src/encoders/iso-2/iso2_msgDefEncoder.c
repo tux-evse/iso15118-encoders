@@ -16707,7 +16707,7 @@ static int encode_iso2_V2G_Message(exi_bitstream_t* stream, const struct iso2_V2
 
 
 // main function for encoding
-int encode_iso2_exiDocument(exi_bitstream_t* stream, struct iso2_exiDocument* exiDoc)
+int encode_iso2_exiDocument(exi_bitstream_t* stream, const struct iso2_exiDocument* exiDoc)
 {
     int error = exi_header_write(stream);
 
@@ -16732,7 +16732,7 @@ int encode_iso2_exiDocument(exi_bitstream_t* stream, struct iso2_exiDocument* ex
    We have not yet been able to determine why this particular type has to be coded as a generic type,
    and only for the fragment decoder and encoder.
    This is why we have not yet adapted our fragment coders, and it can lead to the problem mentioned. */
-int encode_iso2_exiFragment(exi_bitstream_t* stream, struct iso2_exiFragment* exiFrag)
+int encode_iso2_exiFragment(exi_bitstream_t* stream, const struct iso2_exiFragment* exiFrag)
 {
     int error = exi_header_write(stream);
 
@@ -17323,7 +17323,7 @@ int encode_iso2_exiFragment(exi_bitstream_t* stream, struct iso2_exiFragment* ex
 }
 
 // main function for encoding xmldsig fragment
-int encode_iso2_xmldsigFragment(exi_bitstream_t* stream, struct iso2_xmldsigFragment* xmldsigFrag)
+int encode_iso2_xmldsigFragment(exi_bitstream_t* stream, const struct iso2_xmldsigFragment* xmldsigFrag)
 {
     int error = exi_header_write(stream);
 

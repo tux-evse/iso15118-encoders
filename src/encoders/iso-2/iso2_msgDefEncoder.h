@@ -32,11 +32,11 @@ extern "C" {
 
 
 // main function for encoding
-int encode_iso2_exiDocument(exi_bitstream_t* stream, struct iso2_exiDocument* exiDoc);
+int encode_iso2_exiDocument(exi_bitstream_t* stream, const struct iso2_exiDocument* exiDoc);
 // encoding function for fragment
-int encode_iso2_exiFragment(exi_bitstream_t* stream, struct iso2_exiFragment* exiFrag);
+int encode_iso2_exiFragment(exi_bitstream_t* stream, const struct iso2_exiFragment* exiFrag);
 // encoding function for xmldsig fragment
-int encode_iso2_xmldsigFragment(exi_bitstream_t* stream, struct iso2_xmldsigFragment* xmldsigFrag);
+int encode_iso2_xmldsigFragment(exi_bitstream_t* stream, const struct iso2_xmldsigFragment* xmldsigFrag);
 
 #ifdef __cplusplus
 }

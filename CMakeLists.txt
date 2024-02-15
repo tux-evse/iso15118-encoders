@@ -4,4 +4,4 @@ PROJECT(
     VERSION "1.0"
     DESCRIPTION "sharelib for cbexigen iso15118-2x encoders"
 )
-add_subdirectory("src")
+add_subdirectory(src)
