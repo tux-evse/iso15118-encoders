@@ -25,6 +25,7 @@ typedef enum {
 	ISO2_UTILS_ERROR_NOT_SINGLE_SIGNED,		/* there is more than one signed element */
 
 	ISO2_UTILS_ERROR_NOT_AUTHORIZATION_REQ,
+	ISO2_UTILS_ERROR_NOT_METERING_RECEIPT_REQ,
 	ISO2_UTILS_ERROR_NO_SIGNATURE,
 	ISO2_UTILS_ERROR_NO_CHALLENGE,
 	ISO2_UTILS_ERROR_CHALLENGE_SIZE,
@@ -37,6 +38,14 @@ typedef enum {
 extern
 iso2_utils_status_t
 iso2_utils_check_authorization_req_signature(
+	const struct iso2_V2G_Message *message,
+	const uint8_t *challenge,
+        gnutls_pubkey_t pubkey
+);
+
+extern
+iso2_utils_status_t
+iso2_utils_check_metering_receipt_req_signature(
 	const struct iso2_V2G_Message *message,
 	const uint8_t *challenge,
         gnutls_pubkey_t pubkey

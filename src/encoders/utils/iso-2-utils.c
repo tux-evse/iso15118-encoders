@@ -184,7 +184,31 @@ iso2_utils_check_authorization_req_signature(
 	/* initiate the fragment to check */
 	init_iso2_exiFragment(&fragment);
 	fragment.AuthorizationReq_isUsed = 1u;
-	memcpy(&fragment.AuthorizationReq, &message->Body.AuthorizationReq, sizeof message->Body.AuthorizationReq);
+	memcpy(&fragment.AuthorizationReq, &message->Body.AuthorizationReq, sizeof fragment.AuthorizationReq);
+
+	/* check the fragment */
+	return iso2_utils_check_single_fragment_signature(&message->Header.Signature, &fragment, pubkey);
+}
+
+
+iso2_utils_status_t
+iso2_utils_check_metering_receipt_req_signature(
+	const struct iso2_V2G_Message *message,
+	const uint8_t *challenge,
+        gnutls_pubkey_t pubkey
+) {
+	struct iso2_exiFragment fragment;
+
+	/* validate the request */
+	if (message->Body.MeteringReceiptReq_isUsed == 0)
+		return ISO2_UTILS_ERROR_NOT_METERING_RECEIPT_REQ;
+	if (message->Header.Signature_isUsed == 0)
+		return ISO2_UTILS_ERROR_NO_SIGNATURE;
+
+	/* initiate the fragment to check */
+	init_iso2_exiFragment(&fragment);
+	fragment.MeteringReceiptReq_isUsed = 1u;
+	memcpy(&fragment.MeteringReceiptReq, &message->Body.MeteringReceiptReq, sizeof fragment.MeteringReceiptReq);
 
 	/* check the fragment */
 	return iso2_utils_check_single_fragment_signature(&message->Header.Signature, &fragment, pubkey);
