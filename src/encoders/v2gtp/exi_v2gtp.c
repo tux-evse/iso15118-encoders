@@ -21,7 +21,6 @@
 
 #include "exi_v2gtp.h"
 
-
 /* V2G Transport Protocol version */
 #define V2GTP_VERSION     0x01u
 #define V2GTP_VERSION_NOT 0xFEu

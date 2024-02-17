@@ -18,6 +18,14 @@ regenerating encoder is only needed to update to a newer ISO-15118 specification
 * organize xsd files as expected by cbexigen
 * start cbexigen code generator
 
+# compilation
+
+```
+# mkdir build && cd build
+# cmake -DCMAKE_BUILD_TYPE=Release ..
+# cmake -DCMAKE_BUILD_TYPE=Debug ..
+```
+
 **schema should be organized as follow**
 ```
 src/input/schemas/
