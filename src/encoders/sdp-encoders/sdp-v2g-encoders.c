@@ -21,7 +21,8 @@ int sdp_v2g_decode_rqt (const uint8_t* buffer, size_t count, sdp_request *reques
     request->header.version_not= buffer[1];
     request->header.msg_type= (buffer[2] << 8) | buffer[3];
     request->header.msg_len=(buffer[4] << 24) | (buffer[5] << 16) | (buffer[6] << 8) | buffer[7];
-
+    request->security= buffer[8];
+    request->transport= buffer[9];
     return 0;
 }
 
