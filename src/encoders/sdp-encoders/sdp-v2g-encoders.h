@@ -43,6 +43,8 @@ typedef struct {
     sdp_msg_header header;
     struct in6_addr addr;
     in_port_t port;
+    uint8_t security;
+    uint8_t transport;
 } sdp_response;
 
 int sdp_v2g_encode_rsp (const sdp_response* response, uint8_t* buffer, size_t count);

@@ -46,8 +46,11 @@ int sdp_v2g_encode_rsp (const sdp_response* response, uint8_t* buffer, size_t co
        buffer[8+idx] = response->addr.__in6_u.__u6_addr8[idx];
     }
 
-    buffer[26] = (uint8_t)(response->port >> 8 & 0xFFu);
-    buffer[27] = (uint8_t)(response->port & 0xFFu);
+    buffer[24] = (uint8_t)(response->port >> 8 & 0xFFu);
+    buffer[25] = (uint8_t)(response->port & 0xFFu);
+
+    buffer[26] = (uint8_t)(response->security);
+    buffer[27] = (uint8_t)(response->transport);
 
     return 0;
 }
