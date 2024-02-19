@@ -6,14 +6,12 @@ add_compile_options("-fPIC")
 add_library(cb_exi_codec)
 target_compile_features(cb_exi_codec PRIVATE c_std_99)
 
+# Build cb_exi_codec
+file(GLOB EXI_SRC common/exi_*.c)
+file(GLOB EXI_INC common/exi_*.h)
 target_sources(cb_exi_codec
     PRIVATE
-        common/exi_basetypes_decoder.c
-        common/exi_basetypes_encoder.c
-        common/exi_basetypes.c
-        common/exi_bitstream.c
-        common/exi_header.c
-        common/exi_types_decoder.c
+    ${EXI_SRC}
 )
 
 target_include_directories(cb_exi_codec
@@ -45,7 +43,18 @@ set_target_properties (iso15118 PROPERTIES
 	VERSION "${PROJECT_VERSION}"
     )
 
+set_target_properties (cb_exi_codec PROPERTIES
+	PUBLIC_HEADER "${EXI_INC}"
+    LIBRARY_OUTPUT_DIRECTORY "lib64"
+	VERSION "${PROJECT_VERSION}"
+    )
+
 install(TARGETS iso15118
     PUBLIC_HEADER DESTINATION include/iso15118
+    LIBRARY DESTINATION lib64
+)
+
+install(TARGETS cb_exi_codec
+    PUBLIC_HEADER DESTINATION include/cb_exi_codec
     LIBRARY DESTINATION lib64
 )
