@@ -55,6 +55,6 @@ install(TARGETS iso15118
 )
 
 install(TARGETS cb_exi_codec
-    PUBLIC_HEADER DESTINATION include/cb_exi_codec
+    PUBLIC_HEADER DESTINATION include/iso15118
     LIBRARY DESTINATION lib64
 )
