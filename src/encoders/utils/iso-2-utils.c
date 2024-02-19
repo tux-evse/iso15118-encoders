@@ -525,25 +525,12 @@ cleanup:
     return rc;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+/**
+ * Remove memory used by the pubkey
+ */
+void
+iso2_utils_drop_pubkey(
+    gnutls_pubkey_t *pubkey
+) {
+    gnutls_pubkey_deinit(*pubkey);
+}
