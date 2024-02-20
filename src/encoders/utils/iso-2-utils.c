@@ -458,14 +458,14 @@ iso2_utils_check_payement_details_req(
             goto cleanup;
         }
         for (idx = 0 ; idx < cnt ; idx++) {
-            rc = gnutls_x509_crt_init(&certs[ncerts + 1]);
+            rc = gnutls_x509_crt_init(&certs[ncerts]);
             if (rc != GNUTLS_E_SUCCESS) {
                 rc = ISO2_UTILS_ERROR_INTERNAL3;
                 goto cleanup;
             }
             data.data = (void*)msgcert->SubCertificates.Certificate.array[idx].bytes;
             data.size = msgcert->SubCertificates.Certificate.array[idx].bytesLen;
-            rc = gnutls_x509_crt_import(certs[++ncerts], &data, GNUTLS_X509_FMT_DER);
+            rc = gnutls_x509_crt_import(certs[ncerts++], &data, GNUTLS_X509_FMT_DER);
             if (rc != GNUTLS_E_SUCCESS) {
                 rc = ISO2_UTILS_ERROR_CERT_IMPORT;
                 goto cleanup;
@@ -483,19 +483,19 @@ iso2_utils_check_payement_details_req(
             rc = ISO2_UTILS_ERROR_INTERNAL4;
         else {
             rc = gnutls_x509_trust_list_add_cas(tlist, &rootcert, 1, 0);
-            if (rc != GNUTLS_E_SUCCESS)
+            if (rc != 1)
                 rc = ISO2_UTILS_ERROR_INTERNAL6;
             else {
                 vsts = 0;
                 rc = gnutls_x509_trust_list_verify_crt(tlist, certs, ncerts, 0, &vsts, NULL);
                 if (rc != GNUTLS_E_SUCCESS)
                     rc = ISO2_UTILS_ERROR_INTERNAL7;
-                else if (GNUTLS_CERT_INVALID)
+                else if (vsts & GNUTLS_CERT_INVALID)
                     rc = ISO2_UTILS_ERROR_INVALID_CERT;
                 else
                     rc = ISO2_UTILS_DONE;
             }
-            gnutls_x509_trust_list_deinit(tlist, 1);
+            gnutls_x509_trust_list_deinit(tlist, 0);
         }
         gnutls_x509_crt_deinit(rootcert);
         if (rc != ISO2_UTILS_DONE)

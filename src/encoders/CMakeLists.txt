@@ -35,6 +35,8 @@ target_include_directories(iso15118
 target_link_libraries(iso15118
     PRIVATE
         cb_exi_codec
+    PUBLIC
+        gnutls
 )
 
 set_target_properties (iso15118 PROPERTIES
