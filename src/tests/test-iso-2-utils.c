@@ -112,7 +112,7 @@ void do_test_iso2_utils_check_payement_details_req(const char *emaid, int erc)
     rc = iso2_utils_check_payement_details_req(&msg, "root.der", &pubkey);
     tap(rc == erc, "verification of payment details for %s: found %d, expected %d", emaid, rc, erc);
     if (rc == 0)
-        gnutls_pubkey_deinit(pubkey);
+        iso2_utils_drop_pubkey(&pubkey);
 }
 
 void test_iso2_utils_check_payement_details_req()

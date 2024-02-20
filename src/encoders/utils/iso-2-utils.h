@@ -74,9 +74,16 @@ iso2_utils_check_metering_receipt_req_signature(
     gnutls_pubkey_t pubkey
 );
 
+extern
 iso2_utils_status_t
 iso2_utils_check_payement_details_req(
     const struct iso2_V2G_Message *message,
     const char *root_cert_path,
+    gnutls_pubkey_t *pubkey
+);
+
+extern
+void
+iso2_utils_drop_pubkey(
     gnutls_pubkey_t *pubkey
 );
