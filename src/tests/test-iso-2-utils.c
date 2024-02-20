@@ -5,6 +5,7 @@
 #include <string.h>
 #include <unistd.h>
 #include <fcntl.h>
+#include <stdarg.h>
 
 #define MAX_CERT_SIZE 2000
 
@@ -15,6 +16,22 @@ typedef
     }
     certdef;
 
+int ntap = 0;
+void endtap()
+{
+    printf("1..%d\n", ntap);
+}
+void tap(int sts, const char *fmt, ...)
+{
+    va_list ap;
+    printf("%s %d - ", sts ? "ok" : "not ok", ++ntap);
+    va_start(ap, fmt);
+    vprintf(fmt, ap);
+    putchar('\n');
+    va_end(ap);
+}
+
+int itap = 0;
 
 size_t
 loadcertin(
@@ -77,7 +94,7 @@ int loadcertdef(
 }
 
 
-int do_test_iso2_utils_check_payement_details_req(const char *emaid)
+void do_test_iso2_utils_check_payement_details_req(const char *emaid, int erc)
 {
     struct iso2_V2G_Message msg;
     gnutls_pubkey_t pubkey;
@@ -93,23 +110,22 @@ int do_test_iso2_utils_check_payement_details_req(const char *emaid)
     msg.Body.PaymentDetailsReq.ContractSignatureCertChain.SubCertificates.Certificate.arrayLen = 1;
     loadcertdef("sub.der", (certdef*)&msg.Body.PaymentDetailsReq.ContractSignatureCertChain.SubCertificates.Certificate.array[0]);
     rc = iso2_utils_check_payement_details_req(&msg, "root.der", &pubkey);
+    tap(rc == erc, "verification of payment details for %s: found %d, expected %d", emaid, rc, erc);
     if (rc == 0)
         gnutls_pubkey_deinit(pubkey);
-printf("%s: %d\n",emaid,rc);
-    return rc;
 }
 
 void test_iso2_utils_check_payement_details_req()
 {
-    char *ems[] = { "", "45er-tert-g65", "emaid", "E-M-A--ID" };
-    int im;
-
-    for (im = 0 ; im  < (int)(sizeof ems/sizeof*ems) ; im++)
-        do_test_iso2_utils_check_payement_details_req(ems[im]);
+    do_test_iso2_utils_check_payement_details_req("", ISO2_UTILS_ERROR_EMAID_MISMATCH);
+    do_test_iso2_utils_check_payement_details_req("45er-tert-g65", ISO2_UTILS_ERROR_EMAID_MISMATCH);
+    do_test_iso2_utils_check_payement_details_req("emaid", 0);
+    do_test_iso2_utils_check_payement_details_req("E-M-A--ID", 0);
 }
 
 int main(int ac, char **av)
 {
     test_iso2_utils_check_payement_details_req();
-    return 0;
+    endtap();
+   return 0;
 }
