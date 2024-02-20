@@ -9,17 +9,17 @@ make_root_certificate() {
 	certtool \
 		--generate-privkey \
 		--key-type=ecdsa \
-        --curve=secp256r1 \
+                --curve=secp256r1 \
 		--no-text \
-        --outder \
+                --outder \
 		--outfile=$name.key.der
 	certtool \
 		--generate-self-signed \
 		--template=templ-root.cfg \
 		--load-privkey=$name.key.der \
 		--no-text \
-        --inder \
-        --outder \
+                --inder \
+                --outder \
 		--outfile=$name.der
 }
 #-----------------------------
@@ -28,9 +28,9 @@ make_sub_certificate() {
 	certtool \
 		--generate-privkey \
 		--key-type=ecdsa \
-        --curve=secp256r1 \
+                --curve=secp256r1 \
 		--no-text \
-        --outder \
+                --outder \
 		--outfile=$name.key.der
 	certtool \
 		--generate-certificate \
@@ -39,8 +39,8 @@ make_sub_certificate() {
 		--load-ca-privkey=$auth.key.der \
 		--load-ca-certificate=$auth.der \
 		--no-text \
-        --inder \
-        --outder \
+                --inder \
+                --outder \
 		--outfile=$name.der
 	cat $name.der $auth.der > $name.list.der
 }
@@ -50,9 +50,9 @@ make_end_certificate() {
 	certtool \
 		--generate-privkey \
 		--key-type=ecdsa \
-        --curve=secp256r1 \
+                --curve=secp256r1 \
 		--no-text \
-        --outder \
+                --outder \
 		--outfile=$name.key.der
 	certtool \
 		--generate-certificate \
@@ -61,12 +61,16 @@ make_end_certificate() {
 		--load-ca-privkey=$auth.key.der \
 		--load-ca-certificate=$auth.der \
 		--no-text \
-        --inder \
-        --outder \
+                --inder \
+                --outder \
 		--outfile=$name.der
 	cat $name.der $auth.list.der > $name.list.der
 }
 #-----------------------------
-make_root_certificate
-make_sub_certificate
-make_end_certificate
+make_root_certificate root
+make_sub_certificate  sub
+make_end_certificate  end
+
+make_root_certificate root2
+make_sub_certificate  sub2 root2
+make_end_certificate  end2 sub2

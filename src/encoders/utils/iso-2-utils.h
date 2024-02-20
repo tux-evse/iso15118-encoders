@@ -35,24 +35,24 @@ typedef enum {
     ISO2_UTILS_ERROR_BAD_SIGNATURE,
 
     /* 15 .. 24 */
-	ISO2_UTILS_ERROR_CERT_IMPORT,
-	ISO2_UTILS_ERROR_SUBCERT_IMPORT,
-	ISO2_UTILS_ERROR_ROOTCERT_OPEN,
-	ISO2_UTILS_ERROR_ROOTCERT_READ,
-	ISO2_UTILS_ERROR_ROOTCERT_OVERFLOW,
-	ISO2_UTILS_ERROR_ROOTCERT_IMPORT,
-	ISO2_UTILS_ERROR_SUBJECT_CN,
-	ISO2_UTILS_ERROR_EMAID_MISMATCH,
-	ISO2_UTILS_ERROR_TOO_MANY_CERT,
+    ISO2_UTILS_ERROR_CERT_IMPORT,
+    ISO2_UTILS_ERROR_SUBCERT_IMPORT,
+    ISO2_UTILS_ERROR_ROOTCERT_OPEN,
+    ISO2_UTILS_ERROR_ROOTCERT_READ,
+    ISO2_UTILS_ERROR_ROOTCERT_OVERFLOW,
+    ISO2_UTILS_ERROR_ROOTCERT_IMPORT,
+    ISO2_UTILS_ERROR_SUBJECT_CN,
+    ISO2_UTILS_ERROR_EMAID_MISMATCH,
+    ISO2_UTILS_ERROR_TOO_MANY_CERT,
     ISO2_UTILS_ERROR_INVALID_CERT,
 
     /* 25 .. 33 */
     ISO2_UTILS_ERROR_INTERNAL1,
-	ISO2_UTILS_ERROR_INTERNAL2,
-	ISO2_UTILS_ERROR_INTERNAL3,
-	ISO2_UTILS_ERROR_INTERNAL4,
-	ISO2_UTILS_ERROR_INTERNAL5,
-	ISO2_UTILS_ERROR_INTERNAL6,
+    ISO2_UTILS_ERROR_INTERNAL2,
+    ISO2_UTILS_ERROR_INTERNAL3,
+    ISO2_UTILS_ERROR_INTERNAL4,
+    ISO2_UTILS_ERROR_INTERNAL5,
+    ISO2_UTILS_ERROR_INTERNAL6,
     ISO2_UTILS_ERROR_INTERNAL7,
     ISO2_UTILS_ERROR_INTERNAL8,
     ISO2_UTILS_ERROR_INTERNAL9
@@ -76,7 +76,23 @@ iso2_utils_check_metering_receipt_req_signature(
 
 extern
 iso2_utils_status_t
-iso2_utils_check_payement_details_req(
+iso2_utils_check_payment_details_req_trust_list(
+    const struct iso2_V2G_Message *message,
+    gnutls_x509_trust_list_t trust_list,
+    gnutls_pubkey_t *pubkey
+);
+
+extern
+iso2_utils_status_t
+iso2_utils_check_payment_details_req_root_cert(
+    const struct iso2_V2G_Message *message,
+    gnutls_x509_crt_t root_cert,
+    gnutls_pubkey_t *pubkey
+);
+
+extern
+iso2_utils_status_t
+iso2_utils_check_payment_details_req_root_path(
     const struct iso2_V2G_Message *message,
     const char *root_cert_path,
     gnutls_pubkey_t *pubkey

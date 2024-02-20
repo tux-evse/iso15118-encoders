@@ -18,6 +18,7 @@
 #define MAX_NR_SUB_CERT     iso2_certificateType_4_ARRAY_SIZE
 #define MAX_CERT_SIZE       iso2_certificateType_BYTES_SIZE    
 #define MAX_EMAID_SIZE      iso2_eMAID_CHARACTER_SIZE
+
 /**
  * Compute the hash of the given fragment for the given algo.
  * Store the result in digest that is of size szdigest
@@ -386,31 +387,23 @@ compare_emaid(
  *  - ISO2_UTILS_ERROR_TOO_MANY_CERT
  *  - ISO2_UTILS_ERROR_CERT_IMPORT
  *  - ISO2_UTILS_ERROR_INVALID_CERT
- *  - ISO2_UTILS_ERROR_ROOTCERT_OPEN
- *  - ISO2_UTILS_ERROR_ROOTCERT_READ
- *  - ISO2_UTILS_ERROR_ROOTCERT_OVERFLOW
- *  - ISO2_UTILS_ERROR_ROOTCERT_IMPORT
  *  - ISO2_UTILS_ERROR_INTERNAL2
  *  - ISO2_UTILS_ERROR_INTERNAL3
- *  - ISO2_UTILS_ERROR_INTERNAL4
- *  - ISO2_UTILS_ERROR_INTERNAL5
- *  - ISO2_UTILS_ERROR_INTERNAL6
  *  - ISO2_UTILS_ERROR_INTERNAL7
  *  - ISO2_UTILS_ERROR_INTERNAL8
  *  - ISO2_UTILS_ERROR_INTERNAL9;
  *  - ISO2_UTILS_DONE
  */
 iso2_utils_status_t
-iso2_utils_check_payement_details_req(
+iso2_utils_check_payment_details_req_trust_list(
     const struct iso2_V2G_Message *message,
-    const char *root_cert_path,
+    gnutls_x509_trust_list_t trust_list,
     gnutls_pubkey_t *pubkey
 ) {
     int rc;
     unsigned idx, cnt, len, vsts, ncerts = 0;
-    gnutls_x509_crt_t rootcert, certs[MAX_NR_SUB_CERT + 1];
+    gnutls_x509_crt_t certs[MAX_NR_SUB_CERT + 1];
     gnutls_datum_t data;
-    gnutls_x509_trust_list_t tlist;
     const struct iso2_PaymentDetailsReqType *msgreq;
     const struct iso2_CertificateChainType *msgcert;
     gnutls_x509_dn_t gdn;
@@ -449,58 +442,38 @@ iso2_utils_check_payement_details_req(
         goto cleanup;
     }
 
-    /* check the certificates */
-    if (root_cert_path != NULL) {
-        /* import the sub certificates */
-        cnt = msgcert->SubCertificates_isUsed ? msgcert->SubCertificates.Certificate.arrayLen : 0;
-        if (cnt > MAX_NR_SUB_CERT) {
-            rc = ISO2_UTILS_ERROR_TOO_MANY_CERT;
-            goto cleanup;
-        }
-        for (idx = 0 ; idx < cnt ; idx++) {
-            rc = gnutls_x509_crt_init(&certs[ncerts]);
-            if (rc != GNUTLS_E_SUCCESS) {
-                rc = ISO2_UTILS_ERROR_INTERNAL3;
-                goto cleanup;
-            }
-            data.data = (void*)msgcert->SubCertificates.Certificate.array[idx].bytes;
-            data.size = msgcert->SubCertificates.Certificate.array[idx].bytesLen;
-            rc = gnutls_x509_crt_import(certs[ncerts++], &data, GNUTLS_X509_FMT_DER);
-            if (rc != GNUTLS_E_SUCCESS) {
-                rc = ISO2_UTILS_ERROR_CERT_IMPORT;
-                goto cleanup;
-            }
-        }
-
-        /* import the root certificate */
-        rc = load_root_cert(root_cert_path, &rootcert);
-        if (rc != ISO2_UTILS_DONE)
-            goto cleanup;
-
-        /* check the trust chain */
-        rc = gnutls_x509_trust_list_init(&tlist, 1);
-        if (rc != GNUTLS_E_SUCCESS)
-            rc = ISO2_UTILS_ERROR_INTERNAL4;
-        else {
-            rc = gnutls_x509_trust_list_add_cas(tlist, &rootcert, 1, 0);
-            if (rc != 1)
-                rc = ISO2_UTILS_ERROR_INTERNAL6;
-            else {
-                vsts = 0;
-                rc = gnutls_x509_trust_list_verify_crt(tlist, certs, ncerts, 0, &vsts, NULL);
-                if (rc != GNUTLS_E_SUCCESS)
-                    rc = ISO2_UTILS_ERROR_INTERNAL7;
-                else if (vsts & GNUTLS_CERT_INVALID)
-                    rc = ISO2_UTILS_ERROR_INVALID_CERT;
-                else
-                    rc = ISO2_UTILS_DONE;
-            }
-            gnutls_x509_trust_list_deinit(tlist, 0);
-        }
-        gnutls_x509_crt_deinit(rootcert);
-        if (rc != ISO2_UTILS_DONE)
-            goto cleanup;
+    /* import the sub certificates */
+    cnt = msgcert->SubCertificates_isUsed ? msgcert->SubCertificates.Certificate.arrayLen : 0;
+    if (cnt > MAX_NR_SUB_CERT) {
+        rc = ISO2_UTILS_ERROR_TOO_MANY_CERT;
+        goto cleanup;
     }
+    for (idx = 0 ; idx < cnt ; idx++) {
+        rc = gnutls_x509_crt_init(&certs[ncerts]);
+        if (rc != GNUTLS_E_SUCCESS) {
+            rc = ISO2_UTILS_ERROR_INTERNAL3;
+            goto cleanup;
+        }
+        data.data = (void*)msgcert->SubCertificates.Certificate.array[idx].bytes;
+        data.size = msgcert->SubCertificates.Certificate.array[idx].bytesLen;
+        rc = gnutls_x509_crt_import(certs[ncerts++], &data, GNUTLS_X509_FMT_DER);
+        if (rc != GNUTLS_E_SUCCESS) {
+            rc = ISO2_UTILS_ERROR_CERT_IMPORT;
+            goto cleanup;
+        }
+    }
+
+    /* check the trust chain */
+    vsts = 0;
+    rc = gnutls_x509_trust_list_verify_crt(trust_list, certs, ncerts, 0, &vsts, NULL);
+    if (rc != GNUTLS_E_SUCCESS)
+            rc = ISO2_UTILS_ERROR_INTERNAL7;
+    else if (vsts & GNUTLS_CERT_INVALID)
+            rc = ISO2_UTILS_ERROR_INVALID_CERT;
+    else
+            rc = ISO2_UTILS_DONE;
+    if (rc != ISO2_UTILS_DONE)
+        goto cleanup;
 
     /* extract the public key */
     if (pubkey != NULL) {
@@ -522,6 +495,96 @@ iso2_utils_check_payement_details_req(
 cleanup:
     while (ncerts > 0)
         gnutls_x509_crt_deinit(certs[--ncerts]);
+    return rc;
+}
+
+/**
+ * Check the PaymentDetailsReq in its consistency, its link to the
+ * authority if root_cert_path != NULL and extracts the public key
+ * if pubkey it not NULL
+ *
+ * Returned status is one of:
+ *  - ISO2_UTILS_ERROR_NOT_PAYEMENT_DETAIL_REQ
+ *  - ISO2_UTILS_ERROR_CERT_IMPORT
+ *  - ISO2_UTILS_ERROR_SUBJECT_CN
+ *  - ISO2_UTILS_ERROR_EMAID_MISMATCH
+ *  - ISO2_UTILS_ERROR_TOO_MANY_CERT
+ *  - ISO2_UTILS_ERROR_CERT_IMPORT
+ *  - ISO2_UTILS_ERROR_INVALID_CERT
+ *  - ISO2_UTILS_ERROR_INTERNAL2
+ *  - ISO2_UTILS_ERROR_INTERNAL3
+ *  - ISO2_UTILS_ERROR_INTERNAL4
+ *  - ISO2_UTILS_ERROR_INTERNAL6
+ *  - ISO2_UTILS_ERROR_INTERNAL7
+ *  - ISO2_UTILS_ERROR_INTERNAL8
+ *  - ISO2_UTILS_ERROR_INTERNAL9;
+ *  - ISO2_UTILS_DONE
+ */
+iso2_utils_status_t
+iso2_utils_check_payment_details_req_root_cert(
+    const struct iso2_V2G_Message *message,
+    gnutls_x509_crt_t root_cert,
+    gnutls_pubkey_t *pubkey
+) {
+    int rc;
+    gnutls_x509_trust_list_t trust_list;
+
+    /* initiate the trust list */
+    rc = gnutls_x509_trust_list_init(&trust_list, 1);
+    if (rc != GNUTLS_E_SUCCESS)
+        return ISO2_UTILS_ERROR_INTERNAL4;
+    rc = gnutls_x509_trust_list_add_cas(trust_list, &root_cert, 1, 0);
+    if (rc != 1)
+        rc = ISO2_UTILS_ERROR_INTERNAL6;
+    else
+        /* check the trust list */
+        rc = iso2_utils_check_payment_details_req_trust_list(message, trust_list, pubkey);
+    gnutls_x509_trust_list_deinit(trust_list, 0);
+    return rc;
+}
+
+/**
+ * Check the PaymentDetailsReq in its consistency, its link to the
+ * authority if root_cert_path != NULL and extracts the public key
+ * if pubkey it not NULL
+ *
+ * Returned status is one of:
+ *  - ISO2_UTILS_ERROR_NOT_PAYEMENT_DETAIL_REQ
+ *  - ISO2_UTILS_ERROR_CERT_IMPORT
+ *  - ISO2_UTILS_ERROR_SUBJECT_CN
+ *  - ISO2_UTILS_ERROR_EMAID_MISMATCH
+ *  - ISO2_UTILS_ERROR_TOO_MANY_CERT
+ *  - ISO2_UTILS_ERROR_CERT_IMPORT
+ *  - ISO2_UTILS_ERROR_INVALID_CERT
+ *  - ISO2_UTILS_ERROR_ROOTCERT_OPEN
+ *  - ISO2_UTILS_ERROR_ROOTCERT_READ
+ *  - ISO2_UTILS_ERROR_ROOTCERT_OVERFLOW
+ *  - ISO2_UTILS_ERROR_ROOTCERT_IMPORT
+ *  - ISO2_UTILS_ERROR_INTERNAL2
+ *  - ISO2_UTILS_ERROR_INTERNAL3
+ *  - ISO2_UTILS_ERROR_INTERNAL4
+ *  - ISO2_UTILS_ERROR_INTERNAL5
+ *  - ISO2_UTILS_ERROR_INTERNAL6
+ *  - ISO2_UTILS_ERROR_INTERNAL7
+ *  - ISO2_UTILS_ERROR_INTERNAL8
+ *  - ISO2_UTILS_ERROR_INTERNAL9;
+ *  - ISO2_UTILS_DONE
+ */
+iso2_utils_status_t
+iso2_utils_check_payment_details_req_root_path(
+    const struct iso2_V2G_Message *message,
+    const char *root_cert_path,
+    gnutls_pubkey_t *pubkey
+) {
+    int rc;
+    gnutls_x509_crt_t root_cert;
+
+    /* import the root certificate */
+    rc = load_root_cert(root_cert_path, &root_cert);
+    if (rc == ISO2_UTILS_DONE) {
+        rc = iso2_utils_check_payment_details_req_root_cert(message, root_cert, pubkey);
+        gnutls_x509_crt_deinit(root_cert);
+    }
     return rc;
 }
 
