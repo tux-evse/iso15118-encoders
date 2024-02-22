@@ -342,7 +342,7 @@ void do_test_iso2_utils_check_authorization_req_signature(const char *priv, cons
 void test_iso2_utils_check_authorization_req_signature()
 {
     do_test_iso2_utils_check_authorization_req_signature("end.key.der", "end.der", 0);
-    do_test_iso2_utils_check_authorization_req_signature("end2.key.der", "end.der", ISO2_UTILS_ERROR_BAD_SIGNATURE);
+    do_test_iso2_utils_check_authorization_req_signature("end2.key.der", "end.der", ISOX_UTILS_ERROR_BAD_SIGNATURE);
 }
 
 void do_test_iso2_utils_check_metering_receipt_req_signature(const char *priv, const char *cert, int erc)
@@ -403,7 +403,7 @@ void do_test_iso2_utils_check_metering_receipt_req_signature(const char *priv, c
 void test_iso2_utils_check_metering_receipt_req_signature()
 {
     do_test_iso2_utils_check_metering_receipt_req_signature("end.key.der", "end.der", 0);
-    do_test_iso2_utils_check_metering_receipt_req_signature("end2.key.der", "end.der", ISO2_UTILS_ERROR_BAD_SIGNATURE);
+    do_test_iso2_utils_check_metering_receipt_req_signature("end2.key.der", "end.der", ISOX_UTILS_ERROR_BAD_SIGNATURE);
 }
 
 void do_test_iso2_utils_check_payment_details_req(const char *emaid, int idchain, int erc)
@@ -424,18 +424,18 @@ void do_test_iso2_utils_check_payment_details_req(const char *emaid, int idchain
     rc = iso2_utils_check_payment_details_req_root_path(&msg, chains[idchain].root, &pubkey);
     tap(rc == erc, "verification of payment details for %s, chain %d: found %d, expected %d", emaid, idchain, rc, erc);
     if (rc == 0)
-        iso2_utils_drop_pubkey(&pubkey);
+        isox_utils_drop_pubkey(&pubkey);
 }
 
 void test_iso2_utils_check_payment_details_req()
 {
-    do_test_iso2_utils_check_payment_details_req("", 0, ISO2_UTILS_ERROR_EMAID_MISMATCH);
-    do_test_iso2_utils_check_payment_details_req("45er-tert-g65", 0, ISO2_UTILS_ERROR_EMAID_MISMATCH);
+    do_test_iso2_utils_check_payment_details_req("", 0, ISOX_UTILS_ERROR_EMAID_MISMATCH);
+    do_test_iso2_utils_check_payment_details_req("45er-tert-g65", 0, ISOX_UTILS_ERROR_EMAID_MISMATCH);
     do_test_iso2_utils_check_payment_details_req("E-M-A--ID", 0, 0);
     do_test_iso2_utils_check_payment_details_req("emaid", 0, 0);
     do_test_iso2_utils_check_payment_details_req("emaid", 1, 0);
-    do_test_iso2_utils_check_payment_details_req("emaid", 2, ISO2_UTILS_ERROR_INVALID_CERT);
-    do_test_iso2_utils_check_payment_details_req("emaid", 3, ISO2_UTILS_ERROR_INVALID_CERT);
+    do_test_iso2_utils_check_payment_details_req("emaid", 2, ISOX_UTILS_ERROR_INVALID_CERT);
+    do_test_iso2_utils_check_payment_details_req("emaid", 3, ISOX_UTILS_ERROR_INVALID_CERT);
 }
 
 int main(int ac, char **av)
