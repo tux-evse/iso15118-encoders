@@ -345,6 +345,67 @@ void test_iso2_utils_check_authorization_req_signature()
     do_test_iso2_utils_check_authorization_req_signature("end2.key.der", "end.der", ISO2_UTILS_ERROR_BAD_SIGNATURE);
 }
 
+void do_test_iso2_utils_check_metering_receipt_req_signature(const char *priv, const char *cert, int erc)
+{
+    int rc;
+    struct iso2_V2G_Message msg;
+    struct iso2_exiFragment fragment;
+    gnutls_pubkey_t pubkey;
+
+    /* forge the test message */
+    memset(&msg, 0, sizeof msg);
+    init_iso2_V2G_Message(&msg);
+    msg.Body.MeteringReceiptReq_isUsed = 1;
+    memcpy(msg.Body.MeteringReceiptReq.Id.characters, "1234", 4);
+    msg.Body.MeteringReceiptReq.Id.charactersLen = 4;
+    msg.Body.MeteringReceiptReq.Id_isUsed = 1;
+    memcpy(msg.Body.MeteringReceiptReq.SessionID.bytes, "1234", 4);
+    msg.Body.MeteringReceiptReq.SessionID.bytesLen = 4;
+    msg.Body.MeteringReceiptReq.SAScheduleTupleID = 5;
+    msg.Body.MeteringReceiptReq.SAScheduleTupleID_isUsed = 1;
+
+    memcpy(msg.Body.MeteringReceiptReq.MeterInfo.MeterID.characters, "abcd", 4);
+    msg.Body.MeteringReceiptReq.MeterInfo.MeterID.charactersLen = 4;
+    msg.Body.MeteringReceiptReq.MeterInfo.MeterReading = 45;
+    msg.Body.MeteringReceiptReq.MeterInfo.MeterReading_isUsed = 1;
+
+    msg.Body.MeteringReceiptReq.MeterInfo.MeterStatus = 1;
+    msg.Body.MeteringReceiptReq.MeterInfo.MeterStatus_isUsed = 1;
+
+    msg.Body.MeteringReceiptReq.MeterInfo.TMeter = 1;
+    msg.Body.MeteringReceiptReq.MeterInfo.TMeter_isUsed = 1;
+
+/*
+    // SigMeterReading, sigMeterReadingType (base: base64Binary)
+    struct {
+        uint8_t bytes[iso2_sigMeterReadingType_BYTES_SIZE];
+        uint16_t bytesLen;
+    } SigMeterReading;
+    unsigned int SigMeterReading_isUsed:1;
+*/
+
+    /* make signature of the single fragment */
+    memset(&fragment, 0, sizeof fragment);
+    init_iso2_exiFragment(&fragment);
+    fragment.MeteringReceiptReq_isUsed = 1;
+    memcpy(&fragment.MeteringReceiptReq, &msg.Body.MeteringReceiptReq, sizeof fragment.MeteringReceiptReq);
+    rc = sign_single_fragment(priv, &msg.Header, &fragment);
+    if (rc == 0) {
+        rc = load_pubkey_of_cert(cert, &pubkey);
+        if (rc == 0) {
+            rc = iso2_utils_check_metering_receipt_req_signature(&msg, pubkey);
+            gnutls_pubkey_deinit(pubkey);
+        }
+    }
+    tap(rc == erc, "verification metering-receipt req for %s and %s: found %d, expected %d", priv, cert, rc, erc);
+}
+
+void test_iso2_utils_check_metering_receipt_req_signature()
+{
+    do_test_iso2_utils_check_metering_receipt_req_signature("end.key.der", "end.der", 0);
+    do_test_iso2_utils_check_metering_receipt_req_signature("end2.key.der", "end.der", ISO2_UTILS_ERROR_BAD_SIGNATURE);
+}
+
 void do_test_iso2_utils_check_payment_details_req(const char *emaid, int idchain, int erc)
 {
     struct iso2_V2G_Message msg;
@@ -381,6 +442,7 @@ int main(int ac, char **av)
 {
     test_iso2_utils_check_payment_details_req();
     test_iso2_utils_check_authorization_req_signature();
+    test_iso2_utils_check_metering_receipt_req_signature();
     endtap();
     return 0;
 }
