@@ -12,7 +12,10 @@
  *
  */
 #include <stdint.h>
-#include <netinet/in.h>
+#include <unistd.h>
+
+#ifndef SDP_MSG_DEF_TYPES_H
+#define SDP_MSG_DEF_TYPES_H
 
 const uint8_t SDP_V2G_VERSION      = 0x01u;
 const uint8_t SDP_V2G_VERSION_NOT  = 0xFEu;
@@ -25,6 +28,11 @@ const uint8_t  SDP_V2G_SECURITY_NONE= 0x10;
 const uint32_t SDP_V2G_RESPONSE_LEN  = 20;
 const uint32_t SDP_V2G_REQUEST_LEN   = 2;
 const uint32_t SDP_V2G_HEADER_LEN   = 8;
+
+// redefine in6_addr to prevent pulling <netinet/in.h> dependencies
+typedef struct   {
+    uint8_t	u6_addr8[16];
+} sdp_in6_addr;
 
 typedef struct {
     uint8_t version_std;
@@ -41,11 +49,13 @@ typedef struct  {
 
 typedef struct {
     sdp_msg_header header;
-    struct in6_addr addr;
-    in_port_t port;
+    sdp_in6_addr addr;
+    uint16_t port;
     uint8_t security;
     uint8_t transport;
 } sdp_response;
 
 int sdp_v2g_encode_rsp (const sdp_response* response, uint8_t* buffer, size_t count);
 int sdp_v2g_decode_rqt (const uint8_t* buffer, size_t count, sdp_request *request );
+
+#endif

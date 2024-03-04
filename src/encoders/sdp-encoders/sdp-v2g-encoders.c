@@ -42,8 +42,8 @@ int sdp_v2g_encode_rsp (const sdp_response* response, uint8_t* buffer, size_t co
     buffer[6] = (uint8_t)(response->header.msg_len >>  8 & 0xFFu);
     buffer[7] = (uint8_t)(response->header.msg_len & 0xFFu);
 
-    for (int idx=0; idx < sizeof(response->addr.__in6_u.__u6_addr8); idx++) {
-       buffer[8+idx] = response->addr.__in6_u.__u6_addr8[idx];
+    for (int idx=0; idx < sizeof(response->addr.u6_addr8); idx++) {
+       buffer[8+idx] = response->addr.u6_addr8[idx];
     }
 
     buffer[24] = (uint8_t)(response->port >> 8 & 0xFFu);
