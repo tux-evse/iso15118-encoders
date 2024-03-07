@@ -30,9 +30,7 @@ const uint32_t SDP_V2G_REQUEST_LEN   = 2;
 const uint32_t SDP_V2G_HEADER_LEN   = 8;
 
 // redefine in6_addr to prevent pulling <netinet/in.h> dependencies
-typedef struct   {
-    uint8_t	u6_addr8[16];
-} sdp_in6_addr;
+typedef uint8_t sdp_in6_addr[16];
 
 typedef struct {
     uint8_t version_std;
