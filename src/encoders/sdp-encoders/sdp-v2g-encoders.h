@@ -53,7 +53,9 @@ typedef struct {
     uint8_t transport;
 } sdp_response;
 
-int sdp_v2g_encode_rsp (const sdp_response* response, uint8_t* buffer, size_t count);
-int sdp_v2g_decode_rqt (const uint8_t* buffer, size_t count, sdp_request *request );
+int sdp_v2g_decode_req (const uint8_t* buffer, size_t count, sdp_request *request );
+int sdp_v2g_encode_req (const sdp_request* request, uint8_t* buffer, size_t count);
+int sdp_v2g_decode_res (const uint8_t* buffer, size_t count, sdp_response *response );
+int sdp_v2g_encode_res (const sdp_response* response, uint8_t* buffer, size_t count);
 
 #endif
