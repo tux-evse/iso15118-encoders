@@ -60,6 +60,7 @@ int sdp_v2g_decode_res (const uint8_t* buffer, size_t count, sdp_response *respo
     for (int idx=0; idx < sizeof(response->addr); idx++) {
        response->addr[idx]= buffer[8+idx];
     }
+    response->port=(buffer[24] << 8) | buffer[25];
     response->security= buffer[26];
     response->transport= buffer[27];
     return 0;
