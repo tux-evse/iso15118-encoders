@@ -82,6 +82,17 @@ void exi_bitstream_init(exi_bitstream_t* stream, uint8_t* data, size_t data_size
 void exi_bitstream_reset(exi_bitstream_t* stream);
 
 /**
+ * \brief       bitstream get data length
+ *
+ *              Returns the length of the stream.
+ *
+ * \param       stream      output Stream
+ * \return                  byte within stream
+ *
+ */
+size_t exi_bitstream_get_data_size (const exi_bitstream_t* stream);
+
+/**
  * \brief       bitstream get length
  *
  *              Returns the length of the stream.

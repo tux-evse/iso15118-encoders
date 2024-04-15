@@ -118,6 +118,10 @@ void exi_bitstream_reset(exi_bitstream_t* stream)
     stream->bit_count = 0;
 }
 
+size_t exi_bitstream_get_data_size (const exi_bitstream_t* stream) {
+    return stream->data_size;
+}
+
 size_t exi_bitstream_get_length(const exi_bitstream_t* stream)
 {
     size_t length = stream->byte_pos;
