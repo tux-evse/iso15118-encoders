@@ -82,7 +82,8 @@ void V2GTP20_WriteHeader(uint8_t* stream_data, uint32_t stream_payload_length, u
  */
 int V2GTP_ReadHeader(const uint8_t* stream_data, uint32_t* stream_payload_length);
 int V2GTP20_ReadHeader(const uint8_t* stream_data, uint32_t* stream_payload_length, uint16_t v2gtp20_payload_id);
-
+uint16_t V2GTP20_GetPayloadId(const uint8_t* stream_data);
+uint32_t V2GTP20_GetPayloadLen(const uint8_t* stream_data);
 
 #ifdef __cplusplus
 }
