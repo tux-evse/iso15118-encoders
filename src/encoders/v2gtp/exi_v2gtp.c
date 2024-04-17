@@ -83,7 +83,7 @@ uint16_t V2GTP20_GetPayloadId(const uint8_t* stream_data)
     /* check version and inversion */
     if ((stream_data[0] != V2GTP_VERSION) || (stream_data[1] != V2GTP_VERSION_NOT))
     {
-        return 0;
+        return 255;
     }
 
     /* check payload id */
@@ -92,14 +92,14 @@ uint16_t V2GTP20_GetPayloadId(const uint8_t* stream_data)
     return payload_id;
 }
 
-uint32_t V2GTP20_GetPayloadLen(const uint8_t* stream_data)
+int32_t V2GTP20_GetPayloadLen(const uint8_t* stream_data)
 {
     uint16_t payload_id;
 
     /* check version and inversion */
     if ((stream_data[0] != V2GTP_VERSION) || (stream_data[1] != V2GTP_VERSION_NOT))
     {
-        return 0;
+        return -1;
     }
 
     /* check payload id */
