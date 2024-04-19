@@ -56,6 +56,7 @@ int V2GTP_ReadHeader(const uint8_t* stream_data, uint32_t* stream_payload_length
 int V2GTP20_ReadHeader(const uint8_t* stream_data, uint32_t* stream_payload_length, uint16_t v2gtp20_payload_id)
 {
     uint16_t payload_id;
+    *stream_payload_length=0;
 
     /* check version and inversion */
     if ((stream_data[0] != V2GTP_VERSION) || (stream_data[1] != V2GTP_VERSION_NOT))
@@ -94,7 +95,7 @@ uint16_t V2GTP20_GetPayloadId(const uint8_t* stream_data)
 
 int32_t V2GTP20_GetPayloadLen(const uint8_t* stream_data)
 {
-    uint16_t payload_id;
+    uint16_t payload_id=0;
 
     /* check version and inversion */
     if ((stream_data[0] != V2GTP_VERSION) || (stream_data[1] != V2GTP_VERSION_NOT))
