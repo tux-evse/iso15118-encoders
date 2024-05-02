@@ -20,58 +20,58 @@
 #include <gnutls/abstract.h>
 
 typedef enum {
-    ISOX_UTILS_DONE = 0,
+    isox_sign_DONE = 0,
 
     /* 1, 2 */
-    ISOX_UTILS_ERROR_ENCODING,
-    ISOX_UTILS_ERROR_MAKE_DIGEST,
+    isox_sign_ERROR_ENCODING,
+    isox_sign_ERROR_MAKE_DIGEST,
 
     /* 3 .. 6 */
-    ISOX_UTILS_ERROR_DIGEST,
-    ISOX_UTILS_ERROR_DIGEST_LENGTH,
-    ISOX_UTILS_ERROR_DIGEST_MISMATCH,
-    ISOX_UTILS_ERROR_NOT_SINGLE_SIGNED,        /* there is more than one signed element */
+    isox_sign_ERROR_DIGEST,
+    isox_sign_ERROR_DIGEST_LENGTH,
+    isox_sign_ERROR_DIGEST_MISMATCH,
+    isox_sign_ERROR_NOT_SINGLE_SIGNED,        /* there is more than one signed element */
 
     /* 7 .. 14 */
-    ISOX_UTILS_ERROR_NOT_AUTHORIZATION_REQ,
-    ISOX_UTILS_ERROR_NOT_METERING_RECEIPT_REQ,
-    ISOX_UTILS_ERROR_NOT_PAYEMENT_DETAIL_REQ,
-    ISOX_UTILS_ERROR_NOT_METERING_CONFIRMATION_REQ,
-    ISOX_UTILS_ERROR_NOT_PNC_AUTHORIZATION_REQ,
-    ISOX_UTILS_ERROR_NO_SIGNATURE,
-    ISOX_UTILS_ERROR_NO_CHALLENGE,
-    ISOX_UTILS_ERROR_CHALLENGE_SIZE,
-    ISOX_UTILS_ERROR_CHALLENGE_MISMATCH,
-    ISOX_UTILS_ERROR_BAD_SIGNATURE,
+    isox_sign_ERROR_NOT_AUTHORIZATION_REQ,
+    isox_sign_ERROR_NOT_METERING_RECEIPT_REQ,
+    isox_sign_ERROR_NOT_PAYEMENT_DETAIL_REQ,
+    isox_sign_ERROR_NOT_METERING_CONFIRMATION_REQ,
+    isox_sign_ERROR_NOT_PNC_AUTHORIZATION_REQ,
+    isox_sign_ERROR_NO_SIGNATURE,
+    isox_sign_ERROR_NO_CHALLENGE,
+    isox_sign_ERROR_CHALLENGE_SIZE,
+    isox_sign_ERROR_CHALLENGE_MISMATCH,
+    isox_sign_ERROR_BAD_SIGNATURE,
 
     /* 15 .. 24 */
-    ISOX_UTILS_ERROR_CERT_IMPORT,
-    ISOX_UTILS_ERROR_SUBCERT_IMPORT,
-    ISOX_UTILS_ERROR_ROOTCERT_OPEN,
-    ISOX_UTILS_ERROR_ROOTCERT_READ,
-    ISOX_UTILS_ERROR_ROOTCERT_OVERFLOW,
-    ISOX_UTILS_ERROR_ROOTCERT_IMPORT,
-    ISOX_UTILS_ERROR_SUBJECT_CN,
-    ISOX_UTILS_ERROR_EMAID_MISMATCH,
-    ISOX_UTILS_ERROR_TOO_MANY_CERT,
-    ISOX_UTILS_ERROR_INVALID_CERT,
+    isox_sign_ERROR_CERT_IMPORT,
+    isox_sign_ERROR_SUBCERT_IMPORT,
+    isox_sign_ERROR_ROOTCERT_OPEN,
+    isox_sign_ERROR_ROOTCERT_READ,
+    isox_sign_ERROR_ROOTCERT_OVERFLOW,
+    isox_sign_ERROR_ROOTCERT_IMPORT,
+    isox_sign_ERROR_SUBJECT_CN,
+    isox_sign_ERROR_EMAID_MISMATCH,
+    isox_sign_ERROR_TOO_MANY_CERT,
+    isox_sign_ERROR_INVALID_CERT,
 
     /* 25 .. 33 */
-    ISOX_UTILS_ERROR_INTERNAL1,
-    ISOX_UTILS_ERROR_INTERNAL2,
-    ISOX_UTILS_ERROR_INTERNAL3,
-    ISOX_UTILS_ERROR_INTERNAL4,
-    ISOX_UTILS_ERROR_INTERNAL5,
-    ISOX_UTILS_ERROR_INTERNAL6,
-    ISOX_UTILS_ERROR_INTERNAL7,
-    ISOX_UTILS_ERROR_INTERNAL8,
-    ISOX_UTILS_ERROR_INTERNAL9
+    isox_sign_ERROR_INTERNAL1,
+    isox_sign_ERROR_INTERNAL2,
+    isox_sign_ERROR_INTERNAL3,
+    isox_sign_ERROR_INTERNAL4,
+    isox_sign_ERROR_INTERNAL5,
+    isox_sign_ERROR_INTERNAL6,
+    isox_sign_ERROR_INTERNAL7,
+    isox_sign_ERROR_INTERNAL8,
+    isox_sign_ERROR_INTERNAL9
 }
-    isox_utils_status_t;
+    isox_sign_status_t;
 
 extern
-isox_utils_status_t
-isox_utils_load_root_cert(
+isox_sign_status_t
+isox_sign_load_root_cert(
     const char *path,
     gnutls_x509_crt_t *cert
 );
@@ -79,6 +79,6 @@ isox_utils_load_root_cert(
 
 extern
 void
-isox_utils_drop_pubkey(
+isox_sign_drop_pubkey(
     gnutls_pubkey_t *pubkey
 );

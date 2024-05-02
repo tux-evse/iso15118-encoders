@@ -29,15 +29,15 @@
 #include "iso20_WPT_Decoder.h"
 
 extern
-isox_utils_status_t
-iso20_utils_check_metering_confirmation_req_signature(
+isox_sign_status_t
+iso20_sign_check_metering_confirmation_req_signature(
     const struct iso20_exiDocument *message,
     gnutls_pubkey_t pubkey
 );
 
 extern
-isox_utils_status_t
-iso20_utils_check_authorization_req_trust_list(
+isox_sign_status_t
+iso20_sign_check_authorization_req_trust_list(
     const struct iso20_exiDocument *message,
     const uint8_t *challenge,
     gnutls_x509_trust_list_t trust_list,
@@ -45,8 +45,8 @@ iso20_utils_check_authorization_req_trust_list(
 );
 
 extern
-isox_utils_status_t
-iso20_utils_check_authorization_req_root_cert(
+isox_sign_status_t
+iso20_sign_check_authorization_req_root_cert(
     const struct iso20_exiDocument *message,
     const uint8_t *challenge,
     gnutls_x509_crt_t root_cert,
@@ -54,8 +54,8 @@ iso20_utils_check_authorization_req_root_cert(
 );
 
 extern
-isox_utils_status_t
-iso20_utils_check_authorization_req_root_path(
+isox_sign_status_t
+iso20_sign_check_authorization_req_root_path(
     const struct iso20_exiDocument *message,
     const uint8_t *challenge,
     const char *root_cert_path,

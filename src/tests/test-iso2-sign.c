@@ -317,7 +317,7 @@ int sign_single_fragment(
     return 0;
 }
 
-void do_test_iso2_utils_check_authorization_req_signature(const char *priv, const char *cert, int erc)
+void do_test_iso2_sign_check_authorization_req_signature(const char *priv, const char *cert, int erc)
 {
     int rc;
     struct iso2_V2G_Message msg;
@@ -344,20 +344,20 @@ void do_test_iso2_utils_check_authorization_req_signature(const char *priv, cons
     if (rc == 0) {
         rc = load_pubkey_of_cert(cert, &pubkey);
         if (rc == 0) {
-            rc = iso2_utils_check_authorization_req_signature(&msg, CHALLENGE, pubkey);
+            rc = iso2_sign_check_authorization_req_signature(&msg, CHALLENGE, pubkey);
             gnutls_pubkey_deinit(pubkey);
         }
     }
     tap(rc == erc, "verification authorization req for %s and %s: found %d, expected %d", priv, cert, rc, erc);
 }
 
-void test_iso2_utils_check_authorization_req_signature()
+void test_iso2_sign_check_authorization_req_signature()
 {
-    do_test_iso2_utils_check_authorization_req_signature("end.key.der", "end.der", 0);
-    do_test_iso2_utils_check_authorization_req_signature("end2.key.der", "end.der", ISOX_UTILS_ERROR_BAD_SIGNATURE);
+    do_test_iso2_sign_check_authorization_req_signature("end.key.der", "end.der", 0);
+    do_test_iso2_sign_check_authorization_req_signature("end2.key.der", "end.der", isox_sign_ERROR_BAD_SIGNATURE);
 }
 
-void do_test_iso2_utils_check_metering_receipt_req_signature(const char *priv, const char *cert, int erc)
+void do_test_iso2_sign_check_metering_receipt_req_signature(const char *priv, const char *cert, int erc)
 {
     int rc;
     struct iso2_V2G_Message msg;
@@ -405,20 +405,20 @@ void do_test_iso2_utils_check_metering_receipt_req_signature(const char *priv, c
     if (rc == 0) {
         rc = load_pubkey_of_cert(cert, &pubkey);
         if (rc == 0) {
-            rc = iso2_utils_check_metering_receipt_req_signature(&msg, pubkey);
+            rc = iso2_sign_check_metering_receipt_req_signature(&msg, pubkey);
             gnutls_pubkey_deinit(pubkey);
         }
     }
     tap(rc == erc, "verification metering-receipt req for %s and %s: found %d, expected %d", priv, cert, rc, erc);
 }
 
-void test_iso2_utils_check_metering_receipt_req_signature()
+void test_iso2_sign_check_metering_receipt_req_signature()
 {
-    do_test_iso2_utils_check_metering_receipt_req_signature("end.key.der", "end.der", 0);
-    do_test_iso2_utils_check_metering_receipt_req_signature("end2.key.der", "end.der", ISOX_UTILS_ERROR_BAD_SIGNATURE);
+    do_test_iso2_sign_check_metering_receipt_req_signature("end.key.der", "end.der", 0);
+    do_test_iso2_sign_check_metering_receipt_req_signature("end2.key.der", "end.der", isox_sign_ERROR_BAD_SIGNATURE);
 }
 
-void do_test_iso2_utils_check_payment_details_req(const char *emaid, int idchain, int erc)
+void do_test_iso2_sign_check_payment_details_req(const char *emaid, int idchain, int erc)
 {
     struct iso2_V2G_Message msg;
     gnutls_pubkey_t pubkey;
@@ -433,28 +433,28 @@ void do_test_iso2_utils_check_payment_details_req(const char *emaid, int idchain
     msg.Body.PaymentDetailsReq.ContractSignatureCertChain.SubCertificates_isUsed = 1;
     msg.Body.PaymentDetailsReq.ContractSignatureCertChain.SubCertificates.Certificate.arrayLen = 1;
     loadcertdef(chains[idchain].sub, (certdef*)&msg.Body.PaymentDetailsReq.ContractSignatureCertChain.SubCertificates.Certificate.array[0]);
-    rc = iso2_utils_check_payment_details_req_root_path(&msg, chains[idchain].root, &pubkey);
+    rc = iso2_sign_check_payment_details_req_root_path(&msg, chains[idchain].root, &pubkey);
     tap(rc == erc, "verification of payment details for %s, chain %d: found %d, expected %d", emaid, idchain, rc, erc);
     if (rc == 0)
-        isox_utils_drop_pubkey(&pubkey);
+        isox_sign_drop_pubkey(&pubkey);
 }
 
-void test_iso2_utils_check_payment_details_req()
+void test_iso2_sign_check_payment_details_req()
 {
-    do_test_iso2_utils_check_payment_details_req("", 0, ISOX_UTILS_ERROR_EMAID_MISMATCH);
-    do_test_iso2_utils_check_payment_details_req("45er-tert-g65", 0, ISOX_UTILS_ERROR_EMAID_MISMATCH);
-    do_test_iso2_utils_check_payment_details_req("E-M-A--ID", 0, 0);
-    do_test_iso2_utils_check_payment_details_req("emaid", 0, 0);
-    do_test_iso2_utils_check_payment_details_req("emaid", 1, 0);
-    do_test_iso2_utils_check_payment_details_req("emaid", 2, ISOX_UTILS_ERROR_INVALID_CERT);
-    do_test_iso2_utils_check_payment_details_req("emaid", 3, ISOX_UTILS_ERROR_INVALID_CERT);
+    do_test_iso2_sign_check_payment_details_req("", 0, isox_sign_ERROR_EMAID_MISMATCH);
+    do_test_iso2_sign_check_payment_details_req("45er-tert-g65", 0, isox_sign_ERROR_EMAID_MISMATCH);
+    do_test_iso2_sign_check_payment_details_req("E-M-A--ID", 0, 0);
+    do_test_iso2_sign_check_payment_details_req("emaid", 0, 0);
+    do_test_iso2_sign_check_payment_details_req("emaid", 1, 0);
+    do_test_iso2_sign_check_payment_details_req("emaid", 2, isox_sign_ERROR_INVALID_CERT);
+    do_test_iso2_sign_check_payment_details_req("emaid", 3, isox_sign_ERROR_INVALID_CERT);
 }
 
 int main(int ac, char **av)
 {
-    test_iso2_utils_check_payment_details_req();
-    test_iso2_utils_check_authorization_req_signature();
-    test_iso2_utils_check_metering_receipt_req_signature();
+    test_iso2_sign_check_payment_details_req();
+    test_iso2_sign_check_authorization_req_signature();
+    test_iso2_sign_check_metering_receipt_req_signature();
     endtap();
     return 0;
 }
