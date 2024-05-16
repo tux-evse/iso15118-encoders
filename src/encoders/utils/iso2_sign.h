@@ -27,9 +27,23 @@ iso2_sign_check_authorization_req_signature(
 
 extern
 isox_sign_status_t
+iso2_sign_sign_authorization_req(
+    struct iso2_V2G_Message *message,
+    gnutls_privkey_t privkey
+);
+
+extern
+isox_sign_status_t
 iso2_sign_check_metering_receipt_req_signature(
     const struct iso2_V2G_Message *message,
     gnutls_pubkey_t pubkey
+);
+
+extern
+isox_sign_status_t
+iso2_sign_sign_metering_receipt_req(
+    struct iso2_V2G_Message *message,
+    gnutls_privkey_t privkey
 );
 
 extern

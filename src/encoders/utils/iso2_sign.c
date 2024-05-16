@@ -52,6 +52,8 @@ iso2_sign_get_fragment_digest(
     int rc;
 
     /* canonisation of the fragment */
+    memset(buffer, 0, sizeof buffer);
+    memset(&stream, 0, sizeof stream);
     exi_bitstream_init(&stream, buffer, sizeof buffer, 0, NULL);
     rc = encode_iso2_exiFragment(&stream, fragment);
     if (rc != EXI_ERROR__NO_ERROR)
@@ -91,10 +93,70 @@ iso2_sign_get_signature_digest(
     struct iso2_exiFragment sig;
 
     /* create the digest of the signed info of the signature */
+    memset(&sig, 0, sizeof sig);
     init_iso2_exiFragment(&sig);
     sig.SignedInfo_isUsed = 1;
     memcpy(&sig.SignedInfo, &signature->SignedInfo, sizeof sig.SignedInfo);
     return iso2_sign_get_fragment_digest(&sig, dalgo, digest, szdigest, dlen);
+}
+
+
+/**
+ *  - isox_sign_ERROR_ENCODING
+ *  - isox_sign_ERROR_INTERNAL1
+ *  - isox_sign_ERROR_SIGN_FAILED
+ *  - isox_sign_DONE
+ */
+isox_sign_status_t
+iso2_sign_sign_single_fragment(
+    gnutls_privkey_t privkey,
+    struct iso2_MessageHeaderType *header,
+    const struct iso2_exiFragment *fragment
+) {
+    int rc;
+    unsigned dlen;
+    uint8_t digest[DIGEST_MAX_SIZE];
+    gnutls_datum_t data, sig;
+    isox_sign_status_t sts;
+
+    /* create the digest of the fragment */
+    sts = iso2_sign_get_fragment_digest(
+                fragment,
+                DIGEST_ALGO,
+                header->Signature.SignedInfo.Reference.array[0].DigestValue.bytes,
+                (unsigned)sizeof header->Signature.SignedInfo.Reference.array[0].DigestValue.bytes,
+		&dlen);
+    if (sts != isox_sign_DONE)
+        return sts;
+    header->Signature.SignedInfo.Reference.array[0].DigestValue.bytesLen = (uint16_t)dlen;
+    header->Signature.SignedInfo.Reference.arrayLen = 1;
+
+    /* create the digest of the digests */
+    sts = iso2_sign_get_signature_digest(
+                &header->Signature,
+                DIGEST_ALGO,
+                digest,
+                (unsigned)sizeof digest,
+		&dlen);
+    if (sts != isox_sign_DONE)
+        return sts;
+
+    /* sign the digest of digests */
+    data.data = digest;
+    data.size = dlen;
+    sig.data = NULL;
+    sig.size = 0;
+    rc = gnutls_privkey_sign_hash2(privkey, SIGNING_ALGO, 0, &data, &sig);
+    if (rc != GNUTLS_E_SUCCESS || sig.size > sizeof header->Signature.SignatureValue.CONTENT.bytes) {
+        gnutls_free(sig.data);
+        return isox_sign_ERROR_SIGN_FAILED;
+    }
+    memcpy(header->Signature.SignatureValue.CONTENT.bytes, sig.data, sig.size);
+    header->Signature.SignatureValue.CONTENT.bytesLen = (uint16_t)sig.size;
+    header->Signature_isUsed = 1;
+    gnutls_free(sig.data);
+
+    return isox_sign_DONE;
 }
 
 /**
@@ -269,6 +331,43 @@ iso2_sign_check_authorization_req_signature(
 }
 
 /**
+ * Signs the AuthorisationReq message with the given key
+ *
+ * Returned status is one of:
+ *  - isox_sign_ERROR_NOT_AUTHORIZATION_REQ
+ *  - isox_sign_ERROR_NO_CHALLENGE
+ *  - isox_sign_ERROR_CHALLENGE_SIZE
+ *  - isox_sign_ERROR_ENCODING
+ *  - isox_sign_ERROR_INTERNAL1
+ *  - isox_sign_ERROR_SIGN_FAILED
+ *  - isox_sign_DONE
+ */
+isox_sign_status_t
+iso2_sign_sign_authorization_req(
+    struct iso2_V2G_Message *message,
+    gnutls_privkey_t privkey
+) {
+    struct iso2_exiFragment fragment;
+
+    /* validate the request */
+    if (message->Body.AuthorizationReq_isUsed == 0)
+        return isox_sign_ERROR_NOT_AUTHORIZATION_REQ;
+    if (message->Body.AuthorizationReq.GenChallenge_isUsed == 0)
+        return isox_sign_ERROR_NO_CHALLENGE;
+    if (message->Body.AuthorizationReq.GenChallenge.bytesLen != CHALLENGE_SIZE)
+        return isox_sign_ERROR_CHALLENGE_SIZE;
+
+    /* initiate the fragment to check */
+    memset(&fragment, 0, sizeof fragment);
+    init_iso2_exiFragment(&fragment);
+    fragment.AuthorizationReq_isUsed = 1u;
+    memcpy(&fragment.AuthorizationReq, &message->Body.AuthorizationReq, sizeof fragment.AuthorizationReq);
+
+    /* sign the fragment */
+    return iso2_sign_sign_single_fragment(privkey, &message->Header, &fragment);
+}
+
+/**
  * Checks that the MeteringReceiptReq message is signed
  * by the given key
  *
@@ -303,6 +402,37 @@ iso2_sign_check_metering_receipt_req_signature(
 
     /* check the fragment */
     return iso2_sign_check_single_fragment_signature(&message->Header.Signature, &fragment, pubkey);
+}
+
+/**
+ * Signs the MeteringReceiptReq message with the given key
+ *
+ * Returned status is one of:
+ *  - isox_sign_ERROR_NOT_METERING_RECEIPT_REQ
+ *  - isox_sign_ERROR_ENCODING
+ *  - isox_sign_ERROR_INTERNAL1
+ *  - isox_sign_ERROR_SIGN_FAILED
+ *  - isox_sign_DONE
+ */
+isox_sign_status_t
+iso2_sign_sign_metering_receipt_req(
+    struct iso2_V2G_Message *message,
+    gnutls_privkey_t privkey
+) {
+    struct iso2_exiFragment fragment;
+
+    /* validate the request */
+    if (message->Body.MeteringReceiptReq_isUsed == 0)
+        return isox_sign_ERROR_NOT_METERING_RECEIPT_REQ;
+
+    /* initiate the fragment to check */
+    memset(&fragment, 0, sizeof fragment);
+    init_iso2_exiFragment(&fragment);
+    fragment.MeteringReceiptReq_isUsed = 1u;
+    memcpy(&fragment.MeteringReceiptReq, &message->Body.MeteringReceiptReq, sizeof fragment.MeteringReceiptReq);
+
+    /* check the fragment */
+    return iso2_sign_sign_single_fragment(privkey, &message->Header, &fragment);
 }
 
 /**

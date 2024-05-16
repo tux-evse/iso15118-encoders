@@ -44,7 +44,7 @@ typedef enum {
     isox_sign_ERROR_CHALLENGE_MISMATCH,
     isox_sign_ERROR_BAD_SIGNATURE,
 
-    /* 15 .. 24 */
+    /* 15 .. 25 */
     isox_sign_ERROR_CERT_IMPORT,
     isox_sign_ERROR_SUBCERT_IMPORT,
     isox_sign_ERROR_ROOTCERT_OPEN,
@@ -55,8 +55,9 @@ typedef enum {
     isox_sign_ERROR_EMAID_MISMATCH,
     isox_sign_ERROR_TOO_MANY_CERT,
     isox_sign_ERROR_INVALID_CERT,
+    isox_sign_ERROR_SIGN_FAILED,
 
-    /* 25 .. 33 */
+    /* 26 .. 34 */
     isox_sign_ERROR_INTERNAL1,
     isox_sign_ERROR_INTERNAL2,
     isox_sign_ERROR_INTERNAL3,
