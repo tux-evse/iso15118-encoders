@@ -1,6 +1,6 @@
 /*
  * Copyright (C) 2015-2024 IoT.bzh Company
- * Author: Jose Bolo <jobol@iot.bzh>
+ * Author: Jose Bollo <jose.bollo@iot.bzh>
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
