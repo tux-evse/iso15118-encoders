@@ -3,17 +3,11 @@
 add_compile_options("-fPIC")
 
 # exi codec is statically linked with iso15118-2x share lib
-add_library(cb_exi_codec)
-target_compile_features(cb_exi_codec PRIVATE c_std_99)
-
 # Build cb_exi_codec
 file(GLOB EXI_SRC common/exi_*.c)
 file(GLOB EXI_INC common/exi_*.h)
-target_sources(cb_exi_codec
-    PRIVATE
-    ${EXI_SRC}
-)
-
+add_library(cb_exi_codec STATIC ${EXI_SRC})
+target_compile_features(cb_exi_codec PRIVATE c_std_99)
 target_include_directories(cb_exi_codec
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/common
