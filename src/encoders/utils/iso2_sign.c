@@ -301,11 +301,13 @@ iso2_sign_check_single_fragment_signature(
  */
 isox_sign_status_t
 iso2_sign_check_authorization_req_signature(
-    const struct iso2_V2G_Message *message,
+    const struct iso2_exiDocument *document,
     const uint8_t *challenge,
     gnutls_pubkey_t pubkey
 ) {
     struct iso2_exiFragment fragment;
+    const struct iso2_V2G_Message *message= &document->V2G_Message;
+
 
     /* validate the request */
     if (message->Body.AuthorizationReq_isUsed == 0)
@@ -344,10 +346,12 @@ iso2_sign_check_authorization_req_signature(
  */
 isox_sign_status_t
 iso2_sign_sign_authorization_req(
-    struct iso2_V2G_Message *message,
+    struct iso2_exiDocument *document,
     gnutls_privkey_t privkey
 ) {
     struct iso2_exiFragment fragment;
+    struct iso2_V2G_Message *message= &document->V2G_Message;
+
 
     /* validate the request */
     if (message->Body.AuthorizationReq_isUsed == 0)
@@ -384,10 +388,12 @@ iso2_sign_sign_authorization_req(
  */
 isox_sign_status_t
 iso2_sign_check_metering_receipt_req_signature(
-    const struct iso2_V2G_Message *message,
+    const struct iso2_exiDocument *document,
     gnutls_pubkey_t pubkey
 ) {
     struct iso2_exiFragment fragment;
+    const struct iso2_V2G_Message *message= &document->V2G_Message;
+
 
     /* validate the request */
     if (message->Body.MeteringReceiptReq_isUsed == 0)
@@ -416,10 +422,12 @@ iso2_sign_check_metering_receipt_req_signature(
  */
 isox_sign_status_t
 iso2_sign_sign_metering_receipt_req(
-    struct iso2_V2G_Message *message,
+    struct iso2_exiDocument *document,
     gnutls_privkey_t privkey
 ) {
     struct iso2_exiFragment fragment;
+    struct iso2_V2G_Message *message= &document->V2G_Message;
+
 
     /* validate the request */
     if (message->Body.MeteringReceiptReq_isUsed == 0)
@@ -490,10 +498,11 @@ compare_emaid(
  */
 isox_sign_status_t
 iso2_sign_check_payment_details_req_trust_list(
-    const struct iso2_V2G_Message *message,
+    const struct iso2_exiDocument *document,
     gnutls_x509_trust_list_t trust_list,
     gnutls_pubkey_t *pubkey
 ) {
+    const struct iso2_V2G_Message *message= &document->V2G_Message;
     int rc;
     unsigned idx, cnt, len, vsts, ncerts = 0;
     gnutls_x509_crt_t certs[MAX_NR_SUB_CERT + 1];
@@ -616,7 +625,7 @@ cleanup:
  */
 isox_sign_status_t
 iso2_sign_check_payment_details_req_root_cert(
-    const struct iso2_V2G_Message *message,
+    const struct iso2_exiDocument *document,
     gnutls_x509_crt_t root_cert,
     gnutls_pubkey_t *pubkey
 ) {
@@ -632,7 +641,7 @@ iso2_sign_check_payment_details_req_root_cert(
         rc = isox_sign_ERROR_INTERNAL6;
     else
         /* check the trust list */
-        rc = iso2_sign_check_payment_details_req_trust_list(message, trust_list, pubkey);
+        rc = iso2_sign_check_payment_details_req_trust_list(document, trust_list, pubkey);
     gnutls_x509_trust_list_deinit(trust_list, 0);
     return rc;
 }
@@ -666,7 +675,7 @@ iso2_sign_check_payment_details_req_root_cert(
  */
 isox_sign_status_t
 iso2_sign_check_payment_details_req_root_path(
-    const struct iso2_V2G_Message *message,
+    const struct iso2_exiDocument *document,
     const char *root_cert_path,
     gnutls_pubkey_t *pubkey
 ) {
@@ -676,7 +685,7 @@ iso2_sign_check_payment_details_req_root_path(
     /* import the root certificate */
     rc = isox_sign_load_root_cert(root_cert_path, &root_cert);
     if (rc == isox_sign_DONE) {
-        rc = iso2_sign_check_payment_details_req_root_cert(message, root_cert, pubkey);
+        rc = iso2_sign_check_payment_details_req_root_cert(document, root_cert, pubkey);
         gnutls_x509_crt_deinit(root_cert);
     }
     return rc;

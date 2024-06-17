@@ -20,7 +20,7 @@
 extern
 isox_sign_status_t
 iso2_sign_check_authorization_req_signature(
-    const struct iso2_V2G_Message *message,
+    const struct iso2_exiDocument *document,
     const uint8_t *challenge,
     gnutls_pubkey_t pubkey
 );
@@ -28,28 +28,28 @@ iso2_sign_check_authorization_req_signature(
 extern
 isox_sign_status_t
 iso2_sign_sign_authorization_req(
-    struct iso2_V2G_Message *message,
+    struct iso2_exiDocument *document,
     gnutls_privkey_t privkey
 );
 
 extern
 isox_sign_status_t
 iso2_sign_check_metering_receipt_req_signature(
-    const struct iso2_V2G_Message *message,
+    const struct iso2_exiDocument *document,
     gnutls_pubkey_t pubkey
 );
 
 extern
 isox_sign_status_t
 iso2_sign_sign_metering_receipt_req(
-    struct iso2_V2G_Message *message,
+    struct iso2_exiDocument *document,
     gnutls_privkey_t privkey
 );
 
 extern
 isox_sign_status_t
 iso2_sign_check_payment_details_req_trust_list(
-    const struct iso2_V2G_Message *message,
+    const struct iso2_exiDocument *document,
     gnutls_x509_trust_list_t trust_list,
     gnutls_pubkey_t *pubkey
 );
@@ -57,7 +57,7 @@ iso2_sign_check_payment_details_req_trust_list(
 extern
 isox_sign_status_t
 iso2_sign_check_payment_details_req_root_cert(
-    const struct iso2_V2G_Message *message,
+    const struct iso2_exiDocument *document,
     gnutls_x509_crt_t root_cert,
     gnutls_pubkey_t *pubkey
 );
@@ -65,7 +65,7 @@ iso2_sign_check_payment_details_req_root_cert(
 extern
 isox_sign_status_t
 iso2_sign_check_payment_details_req_root_path(
-    const struct iso2_V2G_Message *message,
+    const struct iso2_exiDocument *document,
     const char *root_cert_path,
     gnutls_pubkey_t *pubkey
 );

@@ -320,31 +320,32 @@ int sign_single_fragment(
 void do_test_iso2_sign_check_authorization_req_signature(const char *priv, const char *cert, int erc)
 {
     int rc;
-    struct iso2_V2G_Message msg;
+    struct iso2_exiDocument doc;
     struct iso2_exiFragment fragment;
     gnutls_pubkey_t pubkey;
 
     /* forge the test message */
-    memset(&msg, 0, sizeof msg);
-    init_iso2_V2G_Message(&msg);
-    msg.Body.AuthorizationReq_isUsed = 1;
-    memcpy(msg.Body.AuthorizationReq.Id.characters, "1234", 4);
-    msg.Body.AuthorizationReq.Id.charactersLen = 4;
-    msg.Body.AuthorizationReq.Id_isUsed = 1;
-    memcpy(msg.Body.AuthorizationReq.GenChallenge.bytes, CHALLENGE, CHALLENGE_SIZE);
-    msg.Body.AuthorizationReq.GenChallenge.bytesLen = CHALLENGE_SIZE;
-    msg.Body.AuthorizationReq.GenChallenge_isUsed = 1;
+    memset(&doc, 0, sizeof doc);
+
+    init_iso2_V2G_Message(&doc.V2G_Message);
+    doc.V2G_Message.Body.AuthorizationReq_isUsed = 1;
+    memcpy(doc.V2G_Message.Body.AuthorizationReq.Id.characters, "1234", 4);
+    doc.V2G_Message.Body.AuthorizationReq.Id.charactersLen = 4;
+    doc.V2G_Message.Body.AuthorizationReq.Id_isUsed = 1;
+    memcpy(doc.V2G_Message.Body.AuthorizationReq.GenChallenge.bytes, CHALLENGE, CHALLENGE_SIZE);
+    doc.V2G_Message.Body.AuthorizationReq.GenChallenge.bytesLen = CHALLENGE_SIZE;
+    doc.V2G_Message.Body.AuthorizationReq.GenChallenge_isUsed = 1;
 
     /* make signature of the single fragment */
     memset(&fragment, 0, sizeof fragment);
     init_iso2_exiFragment(&fragment);
     fragment.AuthorizationReq_isUsed = 1;
-    memcpy(&fragment.AuthorizationReq, &msg.Body.AuthorizationReq, sizeof fragment.AuthorizationReq);
-    rc = sign_single_fragment(priv, &msg.Header, &fragment);
+    memcpy(&fragment.AuthorizationReq, &doc.V2G_Message.Body.AuthorizationReq, sizeof fragment.AuthorizationReq);
+    rc = sign_single_fragment(priv, &doc.V2G_Message.Header, &fragment);
     if (rc == 0) {
         rc = load_pubkey_of_cert(cert, &pubkey);
         if (rc == 0) {
-            rc = iso2_sign_check_authorization_req_signature(&msg, CHALLENGE, pubkey);
+            rc = iso2_sign_check_authorization_req_signature(&doc, CHALLENGE, pubkey);
             gnutls_pubkey_deinit(pubkey);
         }
     }
@@ -360,32 +361,32 @@ void test_iso2_sign_check_authorization_req_signature()
 void do_test_iso2_sign_check_metering_receipt_req_signature(const char *priv, const char *cert, int erc)
 {
     int rc;
-    struct iso2_V2G_Message msg;
+    struct iso2_exiDocument doc;
     struct iso2_exiFragment fragment;
     gnutls_pubkey_t pubkey;
 
     /* forge the test message */
-    memset(&msg, 0, sizeof msg);
-    init_iso2_V2G_Message(&msg);
-    msg.Body.MeteringReceiptReq_isUsed = 1;
-    memcpy(msg.Body.MeteringReceiptReq.Id.characters, "1234", 4);
-    msg.Body.MeteringReceiptReq.Id.charactersLen = 4;
-    msg.Body.MeteringReceiptReq.Id_isUsed = 1;
-    memcpy(msg.Body.MeteringReceiptReq.SessionID.bytes, "1234", 4);
-    msg.Body.MeteringReceiptReq.SessionID.bytesLen = 4;
-    msg.Body.MeteringReceiptReq.SAScheduleTupleID = 5;
-    msg.Body.MeteringReceiptReq.SAScheduleTupleID_isUsed = 1;
+    memset(&doc, 0, sizeof doc);
+    init_iso2_V2G_Message(&doc.V2G_Message);
+    doc.V2G_Message.Body.MeteringReceiptReq_isUsed = 1;
+    memcpy(doc.V2G_Message.Body.MeteringReceiptReq.Id.characters, "1234", 4);
+    doc.V2G_Message.Body.MeteringReceiptReq.Id.charactersLen = 4;
+    doc.V2G_Message.Body.MeteringReceiptReq.Id_isUsed = 1;
+    memcpy(doc.V2G_Message.Body.MeteringReceiptReq.SessionID.bytes, "1234", 4);
+    doc.V2G_Message.Body.MeteringReceiptReq.SessionID.bytesLen = 4;
+    doc.V2G_Message.Body.MeteringReceiptReq.SAScheduleTupleID = 5;
+    doc.V2G_Message.Body.MeteringReceiptReq.SAScheduleTupleID_isUsed = 1;
 
-    memcpy(msg.Body.MeteringReceiptReq.MeterInfo.MeterID.characters, "abcd", 4);
-    msg.Body.MeteringReceiptReq.MeterInfo.MeterID.charactersLen = 4;
-    msg.Body.MeteringReceiptReq.MeterInfo.MeterReading = 45;
-    msg.Body.MeteringReceiptReq.MeterInfo.MeterReading_isUsed = 1;
+    memcpy(doc.V2G_Message.Body.MeteringReceiptReq.MeterInfo.MeterID.characters, "abcd", 4);
+    doc.V2G_Message.Body.MeteringReceiptReq.MeterInfo.MeterID.charactersLen = 4;
+    doc.V2G_Message.Body.MeteringReceiptReq.MeterInfo.MeterReading = 45;
+    doc.V2G_Message.Body.MeteringReceiptReq.MeterInfo.MeterReading_isUsed = 1;
 
-    msg.Body.MeteringReceiptReq.MeterInfo.MeterStatus = 1;
-    msg.Body.MeteringReceiptReq.MeterInfo.MeterStatus_isUsed = 1;
+    doc.V2G_Message.Body.MeteringReceiptReq.MeterInfo.MeterStatus = 1;
+    doc.V2G_Message.Body.MeteringReceiptReq.MeterInfo.MeterStatus_isUsed = 1;
 
-    msg.Body.MeteringReceiptReq.MeterInfo.TMeter = 1;
-    msg.Body.MeteringReceiptReq.MeterInfo.TMeter_isUsed = 1;
+    doc.V2G_Message.Body.MeteringReceiptReq.MeterInfo.TMeter = 1;
+    doc.V2G_Message.Body.MeteringReceiptReq.MeterInfo.TMeter_isUsed = 1;
 
 /*
     // SigMeterReading, sigMeterReadingType (base: base64Binary)
@@ -400,12 +401,12 @@ void do_test_iso2_sign_check_metering_receipt_req_signature(const char *priv, co
     memset(&fragment, 0, sizeof fragment);
     init_iso2_exiFragment(&fragment);
     fragment.MeteringReceiptReq_isUsed = 1;
-    memcpy(&fragment.MeteringReceiptReq, &msg.Body.MeteringReceiptReq, sizeof fragment.MeteringReceiptReq);
-    rc = sign_single_fragment(priv, &msg.Header, &fragment);
+    memcpy(&fragment.MeteringReceiptReq, &doc.V2G_Message.Body.MeteringReceiptReq, sizeof fragment.MeteringReceiptReq);
+    rc = sign_single_fragment(priv, &doc.V2G_Message.Header, &fragment);
     if (rc == 0) {
         rc = load_pubkey_of_cert(cert, &pubkey);
         if (rc == 0) {
-            rc = iso2_sign_check_metering_receipt_req_signature(&msg, pubkey);
+            rc = iso2_sign_check_metering_receipt_req_signature(&doc, pubkey);
             gnutls_pubkey_deinit(pubkey);
         }
     }
@@ -420,20 +421,20 @@ void test_iso2_sign_check_metering_receipt_req_signature()
 
 void do_test_iso2_sign_check_payment_details_req(const char *emaid, int idchain, int erc)
 {
-    struct iso2_V2G_Message msg;
+    struct iso2_exiDocument doc;
     gnutls_pubkey_t pubkey;
     int rc;
 
-    memset(&msg, 0, sizeof msg);
-    init_iso2_V2G_Message(&msg);
-    msg.Body.PaymentDetailsReq_isUsed = 1;
-    msg.Body.PaymentDetailsReq.eMAID.charactersLen = (uint16_t)strlen(emaid);
-    memcpy(msg.Body.PaymentDetailsReq.eMAID.characters, emaid, msg.Body.PaymentDetailsReq.eMAID.charactersLen);
-    loadcertdef(chains[idchain].cert, (certdef*)&msg.Body.PaymentDetailsReq.ContractSignatureCertChain.Certificate);
-    msg.Body.PaymentDetailsReq.ContractSignatureCertChain.SubCertificates_isUsed = 1;
-    msg.Body.PaymentDetailsReq.ContractSignatureCertChain.SubCertificates.Certificate.arrayLen = 1;
-    loadcertdef(chains[idchain].sub, (certdef*)&msg.Body.PaymentDetailsReq.ContractSignatureCertChain.SubCertificates.Certificate.array[0]);
-    rc = iso2_sign_check_payment_details_req_root_path(&msg, chains[idchain].root, &pubkey);
+    memset(&doc, 0, sizeof doc);
+    init_iso2_V2G_Message(&doc.V2G_Message);
+    doc.V2G_Message.Body.PaymentDetailsReq_isUsed = 1;
+    doc.V2G_Message.Body.PaymentDetailsReq.eMAID.charactersLen = (uint16_t)strlen(emaid);
+    memcpy(doc.V2G_Message.Body.PaymentDetailsReq.eMAID.characters, emaid, doc.V2G_Message.Body.PaymentDetailsReq.eMAID.charactersLen);
+    loadcertdef(chains[idchain].cert, (certdef*)&doc.V2G_Message.Body.PaymentDetailsReq.ContractSignatureCertChain.Certificate);
+    doc.V2G_Message.Body.PaymentDetailsReq.ContractSignatureCertChain.SubCertificates_isUsed = 1;
+    doc.V2G_Message.Body.PaymentDetailsReq.ContractSignatureCertChain.SubCertificates.Certificate.arrayLen = 1;
+    loadcertdef(chains[idchain].sub, (certdef*)&doc.V2G_Message.Body.PaymentDetailsReq.ContractSignatureCertChain.SubCertificates.Certificate.array[0]);
+    rc = iso2_sign_check_payment_details_req_root_path(&doc, chains[idchain].root, &pubkey);
     tap(rc == erc, "verification of payment details for %s, chain %d: found %d, expected %d", emaid, idchain, rc, erc);
     if (rc == 0)
         isox_sign_drop_pubkey(&pubkey);
