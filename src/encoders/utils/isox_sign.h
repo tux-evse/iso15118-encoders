@@ -9,6 +9,8 @@
  *   http://www.apache.org/licenses/LICENSE-2.0
  *
  */
+#ifndef ISOX_SIGN_H
+#define ISOX_SIGN_H
 
 #include "exi_basetypes.h"
 #include "exi_basetypes_encoder.h"
@@ -83,3 +85,5 @@ void
 isox_sign_drop_pubkey(
     gnutls_pubkey_t *pubkey
 );
+
+#endif

@@ -10,6 +10,9 @@
  *
  */
 
+#ifndef ISO20_SIGN_H
+#define ISO20_SIGN_H
+
 #include "isox_sign.h"
 
 #include "iso20_AC_Datatypes.h"
@@ -61,3 +64,4 @@ iso20_sign_check_authorization_req_root_path(
     const char *root_cert_path,
     gnutls_pubkey_t *pubkey
 );
+#endif
