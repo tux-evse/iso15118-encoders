@@ -236,7 +236,7 @@ iso20_sign_check_single_fragment_signature(
  *  - isox_sign_DONE
  */
 isox_sign_status_t
-iso20_sign_check_metering_confirmation_req_signature(
+iso20_sign_check_metering_confirmation_req(
     const struct iso20_exiDocument *message,
     gnutls_pubkey_t pubkey
 ) {

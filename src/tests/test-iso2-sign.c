@@ -317,7 +317,7 @@ int sign_single_fragment(
     return 0;
 }
 
-void do_test_iso2_sign_check_authorization_req_signature(const char *priv, const char *cert, int erc)
+void do_test_iso2_sign_check_authorization_req(const char *priv, const char *cert, int erc)
 {
     int rc;
     struct iso2_exiDocument doc;
@@ -345,20 +345,20 @@ void do_test_iso2_sign_check_authorization_req_signature(const char *priv, const
     if (rc == 0) {
         rc = load_pubkey_of_cert(cert, &pubkey);
         if (rc == 0) {
-            rc = iso2_sign_check_authorization_req_signature(&doc, CHALLENGE, pubkey);
+            rc = iso2_sign_check_authorization_req(&doc, CHALLENGE, pubkey);
             gnutls_pubkey_deinit(pubkey);
         }
     }
     tap(rc == erc, "verification authorization req for %s and %s: found %d, expected %d", priv, cert, rc, erc);
 }
 
-void test_iso2_sign_check_authorization_req_signature()
+void test_iso2_sign_check_authorization_req()
 {
-    do_test_iso2_sign_check_authorization_req_signature("end.key.der", "end.der", 0);
-    do_test_iso2_sign_check_authorization_req_signature("end2.key.der", "end.der", isox_sign_ERROR_BAD_SIGNATURE);
+    do_test_iso2_sign_check_authorization_req("end.key.der", "end.der", 0);
+    do_test_iso2_sign_check_authorization_req("end2.key.der", "end.der", isox_sign_ERROR_BAD_SIGNATURE);
 }
 
-void do_test_iso2_sign_check_metering_receipt_req_signature(const char *priv, const char *cert, int erc)
+void do_test_iso2_sign_check_metering_receipt_req(const char *priv, const char *cert, int erc)
 {
     int rc;
     struct iso2_exiDocument doc;
@@ -406,17 +406,17 @@ void do_test_iso2_sign_check_metering_receipt_req_signature(const char *priv, co
     if (rc == 0) {
         rc = load_pubkey_of_cert(cert, &pubkey);
         if (rc == 0) {
-            rc = iso2_sign_check_metering_receipt_req_signature(&doc, pubkey);
+            rc = iso2_sign_check_metering_receipt_req(&doc, pubkey);
             gnutls_pubkey_deinit(pubkey);
         }
     }
     tap(rc == erc, "verification metering-receipt req for %s and %s: found %d, expected %d", priv, cert, rc, erc);
 }
 
-void test_iso2_sign_check_metering_receipt_req_signature()
+void test_iso2_sign_check_metering_receipt_req()
 {
-    do_test_iso2_sign_check_metering_receipt_req_signature("end.key.der", "end.der", 0);
-    do_test_iso2_sign_check_metering_receipt_req_signature("end2.key.der", "end.der", isox_sign_ERROR_BAD_SIGNATURE);
+    do_test_iso2_sign_check_metering_receipt_req("end.key.der", "end.der", 0);
+    do_test_iso2_sign_check_metering_receipt_req("end2.key.der", "end.der", isox_sign_ERROR_BAD_SIGNATURE);
 }
 
 void do_test_iso2_sign_check_payment_details_req(const char *emaid, int idchain, int erc)
@@ -454,8 +454,8 @@ void test_iso2_sign_check_payment_details_req()
 int main(int ac, char **av)
 {
     test_iso2_sign_check_payment_details_req();
-    test_iso2_sign_check_authorization_req_signature();
-    test_iso2_sign_check_metering_receipt_req_signature();
+    test_iso2_sign_check_authorization_req();
+    test_iso2_sign_check_metering_receipt_req();
     endtap();
     return 0;
 }

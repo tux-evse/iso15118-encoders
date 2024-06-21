@@ -300,7 +300,7 @@ iso2_sign_check_single_fragment_signature(
  *  - isox_sign_DONE
  */
 isox_sign_status_t
-iso2_sign_check_authorization_req_signature(
+iso2_sign_check_authorization_req(
     const struct iso2_exiDocument *document,
     const uint8_t *challenge,
     gnutls_pubkey_t pubkey
@@ -387,7 +387,7 @@ iso2_sign_sign_authorization_req(
  *  - isox_sign_DONE
  */
 isox_sign_status_t
-iso2_sign_check_metering_receipt_req_signature(
+iso2_sign_check_metering_receipt_req(
     const struct iso2_exiDocument *document,
     gnutls_pubkey_t pubkey
 ) {
