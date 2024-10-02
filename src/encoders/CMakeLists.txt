@@ -35,22 +35,18 @@ target_link_libraries(iso15118
 
 set_target_properties (iso15118 PROPERTIES
 	PUBLIC_HEADER "${ISO20_INC}"
-    LIBRARY_OUTPUT_DIRECTORY "lib64"
 	VERSION "${PROJECT_VERSION}"
     )
 
 set_target_properties (cb_exi_codec PROPERTIES
 	PUBLIC_HEADER "${EXI_INC}"
-    LIBRARY_OUTPUT_DIRECTORY "lib64"
 	VERSION "${PROJECT_VERSION}"
     )
 
 install(TARGETS iso15118
     PUBLIC_HEADER DESTINATION include/iso15118
-    LIBRARY DESTINATION lib64
 )
 
 install(TARGETS cb_exi_codec
     PUBLIC_HEADER DESTINATION include/iso15118
-    LIBRARY DESTINATION lib64
 )
