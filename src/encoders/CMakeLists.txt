@@ -1,4 +1,6 @@
 
+find_package(GnuTLS REQUIRED)
+
 # generic Linux option
 add_compile_options("-fPIC")
 
@@ -30,7 +32,7 @@ target_link_libraries(iso15118
     PRIVATE
         cb_exi_codec
     PUBLIC
-        gnutls
+        GnuTLS::GnuTLS
 )
 
 set_target_properties (iso15118 PROPERTIES
