@@ -217,112 +217,13 @@ load_privkey(
     return rc;
 }
 
-unsigned fragment_digest(
-    const struct iso2_exiFragment *fragment,
-    gnutls_digest_algorithm_t dalgo,
-    uint8_t *digest,
-    unsigned szdigest
-) {
-    unsigned char buffer[MAX_EXI_SIZE];
-    exi_bitstream_t stream;
-    int rc;
-
-    /* canonisation of the fragment */
-    //memset(buffer, 0, sizeof buffer);
-    //memset(&stream, 0, sizeof stream);
-    exi_bitstream_init(&stream, buffer, sizeof buffer, 0, NULL);
-    rc = encode_iso2_exiFragment(&stream, fragment);
-    if (rc != EXI_ERROR__NO_ERROR)
-        return 0;
-
-    /* check digest length */
-    rc = gnutls_hash_get_len(dalgo);
-    if (rc <= 0 || (unsigned)rc > szdigest)
-        return 0;
-
-    /* compute the digest */
-    rc = gnutls_hash_fast(dalgo, buffer, exi_bitstream_get_length(&stream), digest);
-    if (rc != 0)
-        return 0;
-    return (unsigned)gnutls_hash_get_len(dalgo);
-}
-
-unsigned
-signature_digest(
-    const struct iso2_SignatureType *signature,
-    gnutls_digest_algorithm_t dalgo,
-    uint8_t *digest,
-    unsigned szdigest
-) {
-    struct iso2_exiFragment sig;
-    memset(&sig, 0, sizeof sig);
-    init_iso2_exiFragment(&sig);
-    sig.SignedInfo_isUsed = 1;
-    memcpy(&sig.SignedInfo, &signature->SignedInfo, sizeof sig.SignedInfo);
-    return fragment_digest(&sig, dalgo, digest, szdigest);
-}
-
-int sign_single_fragment(
-        const char *key,
-        struct iso2_MessageHeaderType *header,
-        const struct iso2_exiFragment *fragment
-) {
-    int rc;
-    unsigned dsz;
-    gnutls_privkey_t privkey;
-    uint8_t digest[DIGEST_MAX_SIZE];
-    gnutls_datum_t data, sig;
-
-    /* create the digest of the fragment */
-    dsz = fragment_digest(
-                fragment,
-                DIGEST_ALGO,
-                header->Signature.SignedInfo.Reference.array[0].DigestValue.bytes,
-                (unsigned)sizeof header->Signature.SignedInfo.Reference.array[0].DigestValue.bytes);
-    if (dsz == 0)
-        return -1;
-    header->Signature.SignedInfo.Reference.array[0].DigestValue.bytesLen = (uint16_t)dsz;
-    header->Signature.SignedInfo.Reference.arrayLen = 1;
-
-    /* create the digest of the digests */
-    dsz = signature_digest(
-                &header->Signature,
-                DIGEST_ALGO,
-                digest,
-                (unsigned)sizeof digest);
-    if (dsz == 0)
-        return -1;
-
-    /* load the private key */
-    rc = load_privkey(key, &privkey);
-    if (rc != 0)
-        return rc;
-
-    /* sign the digests */
-    data.data = digest;
-    data.size = dsz;
-    sig.data = NULL;
-    sig.size = 0;
-    rc = gnutls_privkey_sign_hash2(privkey, SIGNING_ALGO, 0, &data, &sig);
-    gnutls_privkey_deinit(privkey);
-    if (rc != GNUTLS_E_SUCCESS || sig.size > sizeof header->Signature.SignatureValue.CONTENT.bytes) {
-        gnutls_free(sig.data);
-        return -1;
-    }
-    memcpy(header->Signature.SignatureValue.CONTENT.bytes, sig.data, sig.size);
-    header->Signature.SignatureValue.CONTENT.bytesLen = (uint16_t)sig.size;
-    header->Signature_isUsed = 1;
-    gnutls_free(sig.data);
-
-    return 0;
-}
-
 void do_test_iso2_sign_check_authorization_req(const char *priv, const char *cert, int erc)
 {
     int rc;
     struct iso2_exiDocument doc;
     struct iso2_exiFragment fragment;
     gnutls_pubkey_t pubkey;
+    gnutls_privkey_t privkey;
 
     /* forge the test message */
     memset(&doc, 0, sizeof doc);
@@ -336,17 +237,15 @@ void do_test_iso2_sign_check_authorization_req(const char *priv, const char *cer
     doc.V2G_Message.Body.AuthorizationReq.GenChallenge.bytesLen = CHALLENGE_SIZE;
     doc.V2G_Message.Body.AuthorizationReq.GenChallenge_isUsed = 1;
 
-    /* make signature of the single fragment */
-    memset(&fragment, 0, sizeof fragment);
-    init_iso2_exiFragment(&fragment);
-    fragment.AuthorizationReq_isUsed = 1;
-    memcpy(&fragment.AuthorizationReq, &doc.V2G_Message.Body.AuthorizationReq, sizeof fragment.AuthorizationReq);
-    rc = sign_single_fragment(priv, &doc.V2G_Message.Header, &fragment);
+    rc = load_privkey(priv, &privkey);
     if (rc == 0) {
-        rc = load_pubkey_of_cert(cert, &pubkey);
+        rc = iso2_sign_sign_authorization_req(&doc, privkey);
         if (rc == 0) {
-            rc = iso2_sign_check_authorization_req(&doc, CHALLENGE, pubkey);
-            gnutls_pubkey_deinit(pubkey);
+            rc = load_pubkey_of_cert(cert, &pubkey);
+            if (rc == 0) {
+                rc = iso2_sign_check_authorization_req(&doc, CHALLENGE, pubkey);
+                gnutls_pubkey_deinit(pubkey);
+            }
         }
     }
     tap(rc == erc, "verification authorization req for %s and %s: found %d, expected %d", priv, cert, rc, erc);
@@ -364,6 +263,7 @@ void do_test_iso2_sign_check_metering_receipt_req(const char *priv, const char *
     struct iso2_exiDocument doc;
     struct iso2_exiFragment fragment;
     gnutls_pubkey_t pubkey;
+    gnutls_privkey_t privkey;
 
     /* forge the test message */
     memset(&doc, 0, sizeof doc);
@@ -388,26 +288,21 @@ void do_test_iso2_sign_check_metering_receipt_req(const char *priv, const char *
     doc.V2G_Message.Body.MeteringReceiptReq.MeterInfo.TMeter = 1;
     doc.V2G_Message.Body.MeteringReceiptReq.MeterInfo.TMeter_isUsed = 1;
 
-/*
-    // SigMeterReading, sigMeterReadingType (base: base64Binary)
-    struct {
-        uint8_t bytes[iso2_sigMeterReadingType_BYTES_SIZE];
-        uint16_t bytesLen;
-    } SigMeterReading;
-    unsigned int SigMeterReading_isUsed:1;
-*/
-
     /* make signature of the single fragment */
     memset(&fragment, 0, sizeof fragment);
     init_iso2_exiFragment(&fragment);
     fragment.MeteringReceiptReq_isUsed = 1;
     memcpy(&fragment.MeteringReceiptReq, &doc.V2G_Message.Body.MeteringReceiptReq, sizeof fragment.MeteringReceiptReq);
-    rc = sign_single_fragment(priv, &doc.V2G_Message.Header, &fragment);
+
+    rc = load_privkey(priv, &privkey);
     if (rc == 0) {
-        rc = load_pubkey_of_cert(cert, &pubkey);
+        rc = iso2_sign_sign_metering_receipt_req(&doc, privkey);
         if (rc == 0) {
-            rc = iso2_sign_check_metering_receipt_req(&doc, pubkey);
-            gnutls_pubkey_deinit(pubkey);
+            rc = load_pubkey_of_cert(cert, &pubkey);
+            if (rc == 0) {
+                rc = iso2_sign_check_metering_receipt_req(&doc, pubkey);
+                gnutls_pubkey_deinit(pubkey);
+            }
         }
     }
     tap(rc == erc, "verification metering-receipt req for %s and %s: found %d, expected %d", priv, cert, rc, erc);
