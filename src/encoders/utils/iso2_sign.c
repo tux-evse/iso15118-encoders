@@ -30,6 +30,11 @@
 #define MAX_CERT_SIZE       iso2_certificateType_BYTES_SIZE
 #define MAX_EMAID_SIZE      iso2_eMAID_CHARACTER_SIZE
 
+typedef enum {
+    exi_ns_XML_DSIG,
+    exi_ns_V2G_ISO2
+} exiNamespace;
+
 /**
  * Compute the hash of the given fragment for the given algo.
  * Store the result in digest that is of size szdigest
@@ -41,7 +46,8 @@
  */
 isox_sign_status_t
 iso2_sign_get_fragment_digest(
-    const struct iso2_exiFragment *fragment,
+    const void *fragment,
+    exiNamespace ns,
     gnutls_digest_algorithm_t dalgo,
     uint8_t *digest,
     unsigned szdigest,
@@ -55,7 +61,14 @@ iso2_sign_get_fragment_digest(
     memset(buffer, 0, sizeof buffer);
     memset(&stream, 0, sizeof stream);
     exi_bitstream_init(&stream, buffer, sizeof buffer, 0, NULL);
-    rc = encode_iso2_exiFragment(&stream, fragment);
+    switch (ns) {
+        case exi_ns_XML_DSIG:
+            rc = encode_iso2_xmldsigFragment(&stream, fragment);
+            break;        
+        case exi_ns_V2G_ISO2:
+            rc = encode_iso2_exiFragment(&stream, fragment);
+            break;
+    }
     if (rc != EXI_ERROR__NO_ERROR)
         return isox_sign_ERROR_ENCODING;
 
@@ -90,16 +103,20 @@ iso2_sign_get_signature_digest(
     unsigned szdigest,
     unsigned *dlen
 ) {
-    struct iso2_exiFragment sig;
+    struct iso2_xmldsigFragment sig;
 
     /* create the digest of the signed info of the signature */
     memset(&sig, 0, sizeof sig);
-    init_iso2_exiFragment(&sig);
+    init_iso2_xmldsigFragment(&sig);
     sig.SignedInfo_isUsed = 1;
     memcpy(&sig.SignedInfo, &signature->SignedInfo, sizeof sig.SignedInfo);
-    return iso2_sign_get_fragment_digest(&sig, dalgo, digest, szdigest, dlen);
+    return iso2_sign_get_fragment_digest(&sig, exi_ns_XML_DSIG, dalgo, digest, szdigest, dlen);
 }
 
+#define STORE_CHARS_AND_LEN(MEMBER, STRING) { \
+    memcpy(MEMBER .characters, STRING, sizeof(STRING) - 1); \
+    MEMBER .charactersLen = sizeof(STRING) - 1; \
+} while(0)
 
 /**
  *  - isox_sign_ERROR_ENCODING
@@ -111,21 +128,42 @@ isox_sign_status_t
 iso2_sign_sign_single_fragment(
     gnutls_privkey_t privkey,
     struct iso2_MessageHeaderType *header,
-    const struct iso2_exiFragment *fragment
+    const struct iso2_exiFragment *fragment,
+    const char *reference_id,
+    size_t reference_id_len
 ) {
     int rc;
     unsigned dlen;
     uint8_t digest[DIGEST_MAX_SIZE];
     gnutls_datum_t data, sig;
+    gnutls_datum_t sig_r, sig_s;
     isox_sign_status_t sts;
+    size_t ref_len;
+
+    /* make an URI from the reference ID */
+    header->Signature.SignedInfo.Reference.array[0].URI.characters[0] = '#';
+    memcpy(header->Signature.SignedInfo.Reference.array[0].URI.characters + 1, reference_id, reference_id_len);
+    header->Signature.SignedInfo.Reference.array[0].URI.charactersLen = reference_id_len + 1;
+    header->Signature.SignedInfo.Reference.array[0].URI_isUsed = 1;
+
+    STORE_CHARS_AND_LEN(header->Signature.SignedInfo.CanonicalizationMethod.Algorithm,
+        "http://www.w3.org/TR/canonical-exi/");
+    STORE_CHARS_AND_LEN(header->Signature.SignedInfo.SignatureMethod.Algorithm,
+        "http://www.w3.org/2001/04/xmldsig-more#ecdsa-sha256");
+    STORE_CHARS_AND_LEN(header->Signature.SignedInfo.Reference.array[0].DigestMethod.Algorithm,
+        "http://www.w3.org/2001/04/xmlenc#sha256");
+    STORE_CHARS_AND_LEN(header->Signature.SignedInfo.Reference.array[0].Transforms.Transform.Algorithm,
+        "http://www.w3.org/TR/canonical-exi/");
+    header->Signature.SignedInfo.Reference.array[0].Transforms_isUsed = 1; 
 
     /* create the digest of the fragment */
     sts = iso2_sign_get_fragment_digest(
                 fragment,
+                exi_ns_V2G_ISO2,
                 DIGEST_ALGO,
                 header->Signature.SignedInfo.Reference.array[0].DigestValue.bytes,
                 (unsigned)sizeof header->Signature.SignedInfo.Reference.array[0].DigestValue.bytes,
-		&dlen);
+                &dlen);
     if (sts != isox_sign_DONE)
         return sts;
     header->Signature.SignedInfo.Reference.array[0].DigestValue.bytesLen = (uint16_t)dlen;
@@ -137,7 +175,7 @@ iso2_sign_sign_single_fragment(
                 DIGEST_ALGO,
                 digest,
                 (unsigned)sizeof digest,
-		&dlen);
+                &dlen);
     if (sts != isox_sign_DONE)
         return sts;
 
@@ -146,15 +184,34 @@ iso2_sign_sign_single_fragment(
     data.size = dlen;
     sig.data = NULL;
     sig.size = 0;
+
     rc = gnutls_privkey_sign_hash2(privkey, SIGNING_ALGO, 0, &data, &sig);
     if (rc != GNUTLS_E_SUCCESS || sig.size > sizeof header->Signature.SignatureValue.CONTENT.bytes) {
         gnutls_free(sig.data);
         return isox_sign_ERROR_SIGN_FAILED;
     }
-    memcpy(header->Signature.SignatureValue.CONTENT.bytes, sig.data, sig.size);
-    header->Signature.SignatureValue.CONTENT.bytesLen = (uint16_t)sig.size;
+
+    /**
+     * The signature is returned DER-encoded, but only the raw (r, s) values of ECDSA are needed.
+     * (ref: https://www.w3.org/TR/xmldsig-core/#sec-ECDSA)
+    */
+    rc = gnutls_decode_rs_value(&sig, &sig_r, &sig_s);
+    if (rc != GNUTLS_E_SUCCESS) {
+        gnutls_free(sig.data);
+        return isox_sign_ERROR_SIGN_FAILED;
+    }
+
+    /**
+    * ... r and s may have an extra leading 0 byte that we must remove here,
+    * so that the resulting signature is the concatenation of two 32-byte integers
+    */ 
+    memcpy(header->Signature.SignatureValue.CONTENT.bytes,      sig_r.data + (sig_r.size == 33 ? 1 : 0), 32);
+    memcpy(header->Signature.SignatureValue.CONTENT.bytes + 32, sig_s.data + (sig_s.size == 33 ? 1 : 0), 32);
+    header->Signature.SignatureValue.CONTENT.bytesLen = 64;
     header->Signature_isUsed = 1;
     gnutls_free(sig.data);
+    gnutls_free(sig_r.data);
+    gnutls_free(sig_s.data);
 
     return isox_sign_DONE;
 }
@@ -177,13 +234,14 @@ iso2_sign_sign_single_fragment(
 isox_sign_status_t
 iso2_sign_check_fragment_digest(
     const struct iso2_ReferenceType *reference,
-    const struct iso2_exiFragment *fragment
+    const struct iso2_exiFragment *fragment,
+    exiNamespace ns
 ) {
     unsigned dlen;
     uint8_t digest[DIGEST_MAX_SIZE];
 
     /* get the digest of the fragment */
-    int rc = iso2_sign_get_fragment_digest(fragment, DIGEST_ALGO, digest, sizeof digest, &dlen);
+    int rc = iso2_sign_get_fragment_digest(fragment, ns, DIGEST_ALGO, digest, sizeof digest, &dlen);
     if (rc != isox_sign_DONE)
         return rc;
 
@@ -220,7 +278,7 @@ iso2_sign_check_signature(
     int rc;
     unsigned dlen;
     uint8_t digest[DIGEST_MAX_SIZE];
-    gnutls_datum_t hash, sign;
+    gnutls_datum_t hash, sign, sig_r, sig_s;
 
     /* create the digest of the signed info of the signature */
     rc = iso2_sign_get_signature_digest(signature, DIGEST_ALGO, digest, sizeof digest, &dlen);
@@ -230,12 +288,22 @@ iso2_sign_check_signature(
     /* verify the signature  */
     hash.data = digest;
     hash.size = dlen;
-    sign.data = (void*)signature->SignatureValue.CONTENT.bytes;
-    sign.size = signature->SignatureValue.CONTENT.bytesLen;
-    rc = gnutls_pubkey_verify_hash2(pubkey, SIGNING_ALGO, 0, &hash, &sign);
+    if (signature->SignatureValue.CONTENT.bytesLen != 64)
+        return isox_sign_ERROR_BAD_SIGNATURE;
+
+    sig_r.data = (void *)signature->SignatureValue.CONTENT.bytes;
+    sig_r.size = 32;
+    sig_s.data = sig_r.data + 32;
+    sig_s.size = 32;
+
+    rc = gnutls_encode_rs_value(&sign, &sig_r, &sig_s);
     if (rc < 0)
         return isox_sign_ERROR_BAD_SIGNATURE;
-    return isox_sign_DONE;
+    
+    rc = gnutls_pubkey_verify_hash2(pubkey, SIGNING_ALGO, 0, &hash, &sign);
+    gnutls_free(sign.data);
+
+    return rc == GNUTLS_E_PK_SIG_VERIFY_FAILED ? isox_sign_ERROR_BAD_SIGNATURE : isox_sign_DONE;
 }
 
 /**
@@ -273,7 +341,7 @@ iso2_sign_check_single_fragment_signature(
     return isox_sign_ERROR_NOT_SINGLE_SIGNED;
 
     /* check validity of fragment's hash */
-    rc = iso2_sign_check_fragment_digest(&signature->SignedInfo.Reference.array[0], fragment);
+    rc = iso2_sign_check_fragment_digest(&signature->SignedInfo.Reference.array[0], fragment, exi_ns_V2G_ISO2);
     if (rc != isox_sign_DONE)
         return rc;
 
@@ -361,6 +429,12 @@ iso2_sign_sign_authorization_req(
     if (message->Body.AuthorizationReq.GenChallenge.bytesLen != CHALLENGE_SIZE)
         return isox_sign_ERROR_CHALLENGE_SIZE;
 
+    if (!message->Body.AuthorizationReq.Id_isUsed) {
+        memcpy(message->Body.AuthorizationReq.Id.characters, "ID1", 3);
+        message->Body.AuthorizationReq.Id.charactersLen = 3;
+        message->Body.AuthorizationReq.Id_isUsed = 1;
+    }
+
     /* initiate the fragment to check */
     memset(&fragment, 0, sizeof fragment);
     init_iso2_exiFragment(&fragment);
@@ -368,7 +442,8 @@ iso2_sign_sign_authorization_req(
     memcpy(&fragment.AuthorizationReq, &message->Body.AuthorizationReq, sizeof fragment.AuthorizationReq);
 
     /* sign the fragment */
-    return iso2_sign_sign_single_fragment(privkey, &message->Header, &fragment);
+    return iso2_sign_sign_single_fragment(privkey, &message->Header,
+        &fragment, message->Body.AuthorizationReq.Id.characters, message->Body.AuthorizationReq.Id.charactersLen);
 }
 
 /**
@@ -433,6 +508,12 @@ iso2_sign_sign_metering_receipt_req(
     if (message->Body.MeteringReceiptReq_isUsed == 0)
         return isox_sign_ERROR_NOT_METERING_RECEIPT_REQ;
 
+    if (!message->Body.MeteringReceiptReq.Id_isUsed) {
+        memcpy(message->Body.MeteringReceiptReq.Id.characters, "ID1", 3);
+        message->Body.MeteringReceiptReq.Id.charactersLen = 3;
+        message->Body.MeteringReceiptReq.Id_isUsed = 1;
+    }        
+
     /* initiate the fragment to check */
     memset(&fragment, 0, sizeof fragment);
     init_iso2_exiFragment(&fragment);
@@ -440,7 +521,8 @@ iso2_sign_sign_metering_receipt_req(
     memcpy(&fragment.MeteringReceiptReq, &message->Body.MeteringReceiptReq, sizeof fragment.MeteringReceiptReq);
 
     /* check the fragment */
-    return iso2_sign_sign_single_fragment(privkey, &message->Header, &fragment);
+    return iso2_sign_sign_single_fragment(privkey, &message->Header, &fragment,
+        message->Body.MeteringReceiptReq.Id.characters, message->Body.MeteringReceiptReq.Id.charactersLen);
 }
 
 /**
