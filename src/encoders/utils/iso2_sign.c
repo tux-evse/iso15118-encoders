@@ -526,6 +526,104 @@ iso2_sign_sign_metering_receipt_req(
 }
 
 /**
+ * Checks that the SalesTariff part of ChargeParameterDiscoveryRes
+ * message is signed with the given key
+ *
+ * Returned status is one of:
+ *    - isox_sign_ERROR_NOT_CHARGE_PARAMETER_DISCOVERY_RES,
+ *    - isox_sign_ERROR_NO_SASCHEDULE_LIST,
+ *    - isox_sign_ERROR_UNSUPPORTED_SASCHEDULE_LIST_LENGTH,
+ *    - isox_sign_ERROR_NO_SALES_TARIFF
+ *    - isox_sign_ERROR_NO_SIGNATURE
+ *    - isox_sign_DONE
+ */
+isox_sign_status_t
+iso2_sign_check_charge_parameter_discovery_res_sales_tariff(
+    const struct iso2_exiDocument *document,
+    gnutls_pubkey_t pubkey
+)
+{
+    struct iso2_exiFragment fragment;
+    const struct iso2_V2G_Message *message= &document->V2G_Message;
+
+
+    /* validate the request */
+    if (message->Body.ChargeParameterDiscoveryRes_isUsed == 0)
+        return isox_sign_ERROR_NOT_CHARGE_PARAMETER_DISCOVERY_RES;
+    if (message->Body.ChargeParameterDiscoveryRes.SAScheduleList_isUsed == 0)
+        return isox_sign_ERROR_NO_SASCHEDULE_LIST;
+    // only one schedule is supported
+    if (message->Body.ChargeParameterDiscoveryRes.SAScheduleList.SAScheduleTuple.arrayLen != 1)
+        return isox_sign_ERROR_UNSUPPORTED_SASCHEDULE_LIST_LENGTH;
+    if (message->Body.ChargeParameterDiscoveryRes.SAScheduleList.SAScheduleTuple.array[0].SalesTariff_isUsed == 0)
+        return isox_sign_ERROR_NO_SALES_TARIFF;
+
+    if (message->Header.Signature_isUsed == 0)
+        return isox_sign_ERROR_NO_SIGNATURE;
+
+    /* initiate the fragment to check */
+    init_iso2_exiFragment(&fragment);
+    fragment.SalesTariff_isUsed = 1;
+    memcpy(&fragment.SalesTariff, &message->Body.ChargeParameterDiscoveryRes.SAScheduleList.SAScheduleTuple.array[0].SalesTariff,
+        sizeof fragment.SalesTariff);
+
+    /* check the fragment */
+    return iso2_sign_check_single_fragment_signature(&message->Header.Signature, &fragment, pubkey);
+}
+
+/**
+ * Signs the SalesTariff part of ChargeParameterDiscoveryRes message
+ * with the given key
+ *
+ * Returned status is one of:
+ *    - isox_sign_ERROR_NOT_CHARGE_PARAMETER_DISCOVERY_RES,
+ *    - isox_sign_ERROR_NO_SASCHEDULE_LIST,
+ *    - isox_sign_ERROR_UNSUPPORTED_SASCHEDULE_LIST_LENGTH,
+ *    - isox_sign_ERROR_NO_SALES_TARIFF
+ *    - isox_sign_ERROR_NO_SIGNATURE
+ *    - isox_sign_DONE
+ */
+isox_sign_status_t
+iso2_sign_sign_charge_parameter_discovery_res_sales_tariff(
+    struct iso2_exiDocument *document,
+    gnutls_privkey_t privkey
+) {
+    struct iso2_exiFragment fragment;
+    struct iso2_V2G_Message *message = &document->V2G_Message;
+
+    /* validate the request */
+    if (message->Body.ChargeParameterDiscoveryRes_isUsed == 0)
+        return isox_sign_ERROR_NOT_CHARGE_PARAMETER_DISCOVERY_RES;
+    if (message->Body.ChargeParameterDiscoveryRes.SAScheduleList_isUsed == 0)
+        return isox_sign_ERROR_NO_SASCHEDULE_LIST;
+    // only one schedule is supported
+    if (message->Body.ChargeParameterDiscoveryRes.SAScheduleList.SAScheduleTuple.arrayLen != 1)
+        return isox_sign_ERROR_UNSUPPORTED_SASCHEDULE_LIST_LENGTH;
+    if (message->Body.ChargeParameterDiscoveryRes.SAScheduleList.SAScheduleTuple.array[0].SalesTariff_isUsed == 0)
+        return isox_sign_ERROR_NO_SALES_TARIFF;
+
+    if (message->Header.Signature_isUsed == 0)
+        return isox_sign_ERROR_NO_SIGNATURE;    
+
+    if (!message->Body.ChargeParameterDiscoveryRes.SAScheduleList.SAScheduleTuple.array[0].SalesTariff.Id_isUsed) {
+        memcpy(message->Body.ChargeParameterDiscoveryRes.SAScheduleList.SAScheduleTuple.array[0].SalesTariff.Id.characters, "ID1", 3);
+        message->Body.ChargeParameterDiscoveryRes.SAScheduleList.SAScheduleTuple.array[0].SalesTariff.Id.charactersLen = 3;
+        message->Body.ChargeParameterDiscoveryRes.SAScheduleList.SAScheduleTuple.array[0].SalesTariff.Id_isUsed = 1;
+    }        
+
+    /* initiate the fragment to check */
+    init_iso2_exiFragment(&fragment);
+    fragment.SalesTariff_isUsed = 1;
+    memcpy(&fragment.SalesTariff, &message->Body.ChargeParameterDiscoveryRes.SAScheduleList.SAScheduleTuple.array[0].SalesTariff,
+        sizeof fragment.SalesTariff);    
+
+    /* check the fragment */
+    return iso2_sign_sign_single_fragment(privkey, &message->Header, &fragment,
+        message->Body.ChargeParameterDiscoveryRes.SAScheduleList.SAScheduleTuple.array[0].SalesTariff.Id.characters,
+        message->Body.ChargeParameterDiscoveryRes.SAScheduleList.SAScheduleTuple.array[0].SalesTariff.Id.charactersLen);
+}
+
+/**
  * Compares the 2 given EMAID and returns 0 if they are not equals
  * or of length null or return the length of the EMAID without decoration.
  * Decoration is made of dashes separating groups.

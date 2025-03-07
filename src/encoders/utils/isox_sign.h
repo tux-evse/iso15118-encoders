@@ -68,7 +68,12 @@ typedef enum {
     isox_sign_ERROR_INTERNAL6,
     isox_sign_ERROR_INTERNAL7,
     isox_sign_ERROR_INTERNAL8,
-    isox_sign_ERROR_INTERNAL9
+    isox_sign_ERROR_INTERNAL9,
+
+    isox_sign_ERROR_NOT_CHARGE_PARAMETER_DISCOVERY_RES,
+    isox_sign_ERROR_NO_SASCHEDULE_LIST,
+    isox_sign_ERROR_UNSUPPORTED_SASCHEDULE_LIST_LENGTH,
+    isox_sign_ERROR_NO_SALES_TARIFF
 }
     isox_sign_status_t;
 
