@@ -50,6 +50,20 @@ iso2_sign_sign_metering_receipt_req(
 
 extern
 isox_sign_status_t
+iso2_sign_check_charge_parameter_discovery_res_sales_tariff(
+    const struct iso2_exiDocument *document,
+    gnutls_pubkey_t pubkey
+);
+
+extern
+isox_sign_status_t
+iso2_sign_sign_charge_parameter_discovery_res_sales_tariff(
+    struct iso2_exiDocument *document,
+    gnutls_privkey_t pubkey
+);
+
+extern
+isox_sign_status_t
 iso2_sign_check_payment_details_req_trust_list(
     const struct iso2_exiDocument *document,
     gnutls_x509_trust_list_t trust_list,
